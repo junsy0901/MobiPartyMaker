@@ -44,6 +44,7 @@ function App() {
     message: string;
     type: "error" | "success";
   } | null>(null);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   // 캐릭터 변경 시 localStorage에 저장
   useEffect(() => {
@@ -85,6 +86,14 @@ function App() {
   // 캐릭터 삭제 (리스트에서)
   const handleRemoveCharacter = (characterId: string) => {
     setCharacters((prev) => prev.filter((c) => c.id !== characterId));
+  };
+
+  // 전체 초기화
+  const handleResetAll = () => {
+    setCharacters([]);
+    setParties([]);
+    setIsResetModalOpen(false);
+    showToast("모든 데이터가 초기화되었습니다.", "success");
   };
 
   // 파티 생성
@@ -326,6 +335,69 @@ function App() {
         </div>
       )}
 
+      {/* 초기화 확인 모달 */}
+      {isResetModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* 배경 오버레이 */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsResetModalOpen(false)}
+          />
+          
+          {/* 모달 컨텐츠 */}
+          <div className="relative bg-gradient-to-br from-[#1a1a2e] to-[#12121f] rounded-2xl border border-[#2d2d44] shadow-2xl p-6 max-w-md w-full mx-4 animate-modal-in">
+            {/* 경고 아이콘 */}
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
+                <svg
+                  className="w-8 h-8 text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+            </div>
+
+            {/* 제목 */}
+            <h3 className="text-xl font-bold text-white text-center mb-2">
+              전체 초기화
+            </h3>
+
+            {/* 설명 */}
+            <p className="text-gray-400 text-center mb-6">
+              모든 <span className="text-red-400 font-semibold">신청자 목록</span>과{" "}
+              <span className="text-red-400 font-semibold">파티 정보</span>가
+              삭제됩니다.
+              <br />
+              이 작업은 되돌릴 수 없습니다.
+            </p>
+
+            {/* 버튼 그룹 */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsResetModalOpen(false)}
+                className="flex-1 px-4 py-3 bg-[#2d2d44] text-gray-300 font-semibold rounded-xl hover:bg-[#3d3d54] transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleResetAll}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-red-500 text-white font-semibold rounded-xl hover:from-red-500 hover:to-red-400 transition-all shadow-lg"
+              >
+                초기화
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="relative max-w-[1800px] mx-auto p-6">
         {/* 헤더 */}
         <header className="text-center mb-6">
@@ -348,9 +420,32 @@ function App() {
             <h2 className="text-lg font-bold text-white flex items-center gap-2">
               <span className="text-xl">👥 신청자 목록</span>
             </h2>
-            <span className="text-sm text-gray-400">
-              {availableCharacters.length}명 대기중 / 총 {characters.length}명
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-400">
+                {availableCharacters.length}명 대기중 / 총 {characters.length}명
+              </span>
+              <button
+                onClick={() => setIsResetModalOpen(true)}
+                disabled={characters.length === 0}
+                className="px-3 py-1.5 bg-red-500/10 text-red-400 border border-red-500/30 font-medium rounded-lg hover:bg-red-500/20 hover:border-red-500/50 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-sm flex items-center gap-1.5"
+                title="모든 데이터 초기화"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                초기화
+              </button>
+            </div>
           </div>
 
           {characters.length === 0 ? (
@@ -534,6 +629,19 @@ function App() {
         }
         .animate-slide-in {
           animation: slide-in 0.3s ease-out;
+        }
+        @keyframes modal-in {
+          from {
+            transform: scale(0.9) translateY(-20px);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+          }
+        }
+        .animate-modal-in {
+          animation: modal-in 0.2s ease-out;
         }
         .scrollbar-thin::-webkit-scrollbar {
           width: 6px;
