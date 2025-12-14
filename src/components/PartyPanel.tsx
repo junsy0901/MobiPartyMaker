@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Party, Character, PartyCondition, ClassName } from "../types";
 import { PartySlot } from "./PartySlot";
-import { PARTY_SIZE, CLASS_LIST } from "../constants/classes";
+import { PARTY_SIZE, CLASS_GROUPS, getClassImagePath } from "../constants/classes";
 
 interface PartyPanelProps {
   party: Party;
@@ -257,28 +257,38 @@ export function PartyPanel({
                 <label className="block text-xs text-gray-400 mb-2">
                   직업 선택 (여러 개 선택 가능)
                 </label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto pr-2 scrollbar-thin">
-                  {CLASS_LIST.map((cls) => {
-                    const isSelected = selectedClasses.includes(cls);
-                    return (
-                      <label
-                        key={cls}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-all ${
-                          isSelected
-                            ? "bg-indigo-500/20 border-indigo-500/50 text-indigo-300"
-                            : "bg-[#1a1a2e] border-[#2d2d44] text-gray-300 hover:border-indigo-500/30"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => handleToggleClass(cls)}
-                          className="w-4 h-4 rounded border-[#2d2d44] bg-[#0f0f1a] text-indigo-600 focus:ring-indigo-500 focus:ring-2"
-                        />
-                        <span className="text-sm">{cls}</span>
-                      </label>
-                    );
-                  })}
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin">
+                  {CLASS_GROUPS.map((group) => (
+                    <div key={group.name} className="bg-[#1a1a2e] rounded-lg border border-[#2d2d44] p-2">
+                      <div className="text-xs text-gray-400 font-medium mb-2 px-1">
+                        {group.name}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {group.classes.map((cls) => {
+                          const isSelected = selectedClasses.includes(cls);
+                          return (
+                            <button
+                              type="button"
+                              key={cls}
+                              onClick={() => handleToggleClass(cls)}
+                              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md border transition-all text-sm whitespace-nowrap ${
+                                isSelected
+                                  ? "bg-indigo-500/20 border-indigo-500/50 text-indigo-300"
+                                  : "bg-[#0f0f1a] border-[#2d2d44] text-gray-300 hover:border-indigo-500/30"
+                              }`}
+                            >
+                              <img
+                                src={getClassImagePath(cls)}
+                                alt={cls}
+                                className="w-5 h-5 rounded object-cover"
+                              />
+                              <span>{cls}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
                 {selectedClasses.length > 0 && (
                   <p className="mt-2 text-xs text-indigo-300">
