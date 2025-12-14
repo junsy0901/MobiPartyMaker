@@ -35,14 +35,6 @@ export function PartyPanel({
   );
   const averagePower = filledSlots > 0 ? totalPower / filledSlots : 0;
 
-  // 조건 검증: 현재 파티가 조건을 만족하는지 확인 (여러 클래스 중 합산)
-  const checkCondition = (condition: PartyCondition): boolean => {
-    const totalCount = party.slots.filter(
-      (slot) => slot && condition.classNames.includes(slot.className)
-    ).length;
-    return totalCount >= condition.minCount;
-  };
-
   // 선택된 클래스들의 총 인원 수 계산
   const getSelectedClassesCount = (classNames: ClassName[]): number => {
     return party.slots.filter(

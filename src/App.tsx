@@ -1,6 +1,5 @@
 import { useState } from "react";
 import type { Character, Party } from "./types";
-import type { PartyCondition } from "./types";
 import { CharacterForm } from "./components/CharacterForm";
 import { CharacterCard } from "./components/CharacterCard";
 import { PartyPanel } from "./components/PartyPanel";
