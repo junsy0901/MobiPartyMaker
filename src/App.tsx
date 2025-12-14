@@ -249,6 +249,21 @@ function App() {
     (char) => !isCharacterInAnyParty(char.id)
   );
 
+  // 계정별로 캐릭터 그룹화
+  const groupedCharacters = characters.reduce((acc, char) => {
+    if (!acc[char.accountName]) {
+      acc[char.accountName] = [];
+    }
+    acc[char.accountName].push(char);
+    return acc;
+  }, {} as Record<string, Character[]>);
+
+  // 그룹 내 모든 캐릭터가 파티에 배치되었는지 확인
+  const isAccountFullyAssigned = (accountName: string) => {
+    const accountChars = groupedCharacters[accountName];
+    return accountChars.every((char) => isCharacterInAnyParty(char.id));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a15] via-[#0f0f1a] to-[#0a0a15]">
       {/* 배경 장식 */}
@@ -303,23 +318,58 @@ function App() {
               <p>등록된 캐릭터가 없습니다. 위에서 캐릭터를 추가해주세요.</p>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-3 max-h-[200px] overflow-y-auto pr-2 scrollbar-thin">
-              {characters.map((character) => (
-                <div
-                  key={character.id}
-                  className={`flex-shrink-0 w-[280px] ${
-                    isCharacterInAnyParty(character.id)
-                      ? "opacity-40 pointer-events-none"
-                      : ""
-                  }`}
-                >
-                  <CharacterCard
-                    character={character}
-                    onRemove={() => handleRemoveCharacter(character.id)}
-                    isDraggable={!isCharacterInAnyParty(character.id)}
-                  />
-                </div>
-              ))}
+            <div className="flex flex-wrap gap-4 max-h-[320px] overflow-y-auto pr-2 scrollbar-thin">
+              {Object.entries(groupedCharacters).map(([accountName, chars]) => {
+                const allAssigned = isAccountFullyAssigned(accountName);
+                const availableCount = chars.filter(
+                  (c) => !isCharacterInAnyParty(c.id)
+                ).length;
+
+                return (
+                  <div
+                    key={accountName}
+                    className={`flex-shrink-0 bg-gradient-to-br from-[#12121f] to-[#0f0f1a] rounded-xl border p-3 ${
+                      allAssigned
+                        ? "border-[#2d2d44]/50 opacity-50"
+                        : "border-[#3d3d54]"
+                    }`}
+                  >
+                    {/* 계정 헤더 */}
+                    <div className="flex items-center gap-2 mb-2 pb-2 border-b border-[#2d2d44]">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                        {accountName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-white font-semibold text-sm truncate block">
+                          @{accountName}
+                        </span>
+                        <span className="text-xs text-gray-400">
+                          {availableCount}/{chars.length}명 대기중
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 캐릭터 목록 */}
+                    <div className="space-y-2">
+                      {chars.map((character) => {
+                        const inParty = isCharacterInAnyParty(character.id);
+                        return (
+                          <div
+                            key={character.id}
+                            className={inParty ? "opacity-40 pointer-events-none" : ""}
+                          >
+                            <CharacterCard
+                              character={character}
+                              onRemove={() => handleRemoveCharacter(character.id)}
+                              isDraggable={!inParty}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
