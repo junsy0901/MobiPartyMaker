@@ -141,6 +141,109 @@ function App() {
     );
   };
 
+  // 자동 파티 생성
+  const handleAutoAssign = () => {
+    if (parties.length === 0) {
+      showToast("먼저 파티를 생성해주세요!", "error");
+      return;
+    }
+
+    const availableChars = characters.filter(
+      (char) => !isCharacterInAnyParty(char.id)
+    );
+
+    if (availableChars.length === 0) {
+      showToast("배치 가능한 캐릭터가 없습니다!", "error");
+      return;
+    }
+
+    // 전투력 순으로 정렬 (높은 순)
+    const sortedChars = [...availableChars].sort((a, b) => b.power - a.power);
+
+    // 새로운 파티 상태 복사
+    const newParties = parties.map((p) => ({
+      ...p,
+      slots: [...p.slots],
+    }));
+
+    // 사용된 캐릭터 추적
+    const usedCharIds = new Set<string>();
+
+    // 1단계: 조건이 있는 파티에 조건을 만족시키는 캐릭터 우선 배치
+    for (const party of newParties) {
+      if (party.conditions.length === 0) continue;
+
+      // 파티에 이미 있는 계정 추적
+      const usedAccounts = new Set(
+        party.slots.filter((s) => s !== null).map((s) => s!.accountName)
+      );
+
+      for (const condition of party.conditions) {
+        // 현재 조건 충족 수 계산
+        const currentCount = party.slots.filter(
+          (slot) => slot && condition.classNames.includes(slot.className)
+        ).length;
+
+        const needed = condition.minCount - currentCount;
+        if (needed <= 0) continue;
+
+        // 조건에 맞는 캐릭터 찾기
+        const matchingChars = sortedChars.filter(
+          (char) =>
+            condition.classNames.includes(char.className) &&
+            !usedCharIds.has(char.id) &&
+            !usedAccounts.has(char.accountName)
+        );
+
+        let filled = 0;
+        for (const char of matchingChars) {
+          if (filled >= needed) break;
+
+          // 빈 슬롯 찾기
+          const emptySlotIndex = party.slots.findIndex((s) => s === null);
+          if (emptySlotIndex === -1) break;
+
+          party.slots[emptySlotIndex] = char;
+          usedCharIds.add(char.id);
+          usedAccounts.add(char.accountName);
+          filled++;
+        }
+      }
+    }
+
+    // 2단계: 남은 캐릭터를 빈 슬롯에 배치 (전투력 순)
+    const remainingChars = sortedChars.filter(
+      (char) => !usedCharIds.has(char.id)
+    );
+
+    for (const char of remainingChars) {
+      // 빈 슬롯이 있는 파티 찾기 (같은 계정이 없는 파티)
+      for (const party of newParties) {
+        const usedAccounts = new Set(
+          party.slots.filter((s) => s !== null).map((s) => s!.accountName)
+        );
+
+        if (usedAccounts.has(char.accountName)) continue;
+
+        const emptySlotIndex = party.slots.findIndex((s) => s === null);
+        if (emptySlotIndex === -1) continue;
+
+        party.slots[emptySlotIndex] = char;
+        usedCharIds.add(char.id);
+        break;
+      }
+    }
+
+    setParties(newParties);
+
+    const assignedCount = usedCharIds.size;
+    if (assignedCount > 0) {
+      showToast(`${assignedCount}명의 캐릭터가 자동 배치되었습니다!`, "success");
+    } else {
+      showToast("배치할 수 있는 캐릭터가 없습니다.", "error");
+    }
+  };
+
   // 배치되지 않은 캐릭터만 필터링
   const availableCharacters = characters.filter(
     (char) => !isCharacterInAnyParty(char.id)
@@ -228,25 +331,48 @@ function App() {
               <span className="text-xl">🎮</span>
               파티 목록
             </h2>
-            <button
-              onClick={handleCreateParty}
-              className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-500 hover:to-purple-500 transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 text-sm"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleAutoAssign}
+                disabled={parties.length === 0 || availableCharacters.length === 0}
+                className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-xl hover:from-emerald-500 hover:to-teal-500 disabled:from-gray-600 disabled:to-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 text-sm"
+                title="조건에 맞게 캐릭터를 자동으로 파티에 배치합니다"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              파티 생성
-            </button>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+                자동 배치
+              </button>
+              <button
+                onClick={handleCreateParty}
+                className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-500 hover:to-purple-500 transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 text-sm"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                파티 생성
+              </button>
+            </div>
           </div>
 
           {parties.length === 0 ? (
