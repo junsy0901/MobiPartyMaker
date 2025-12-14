@@ -1,17 +1,59 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Character, Party } from "./types";
 import { CharacterForm } from "./components/CharacterForm";
 import { CharacterCard } from "./components/CharacterCard";
 import { PartyPanel } from "./components/PartyPanel";
 import { PARTY_SIZE } from "./constants/classes";
 
+// localStorage 키
+const STORAGE_KEYS = {
+  CHARACTERS: "mobi_party_characters",
+  PARTIES: "mobi_party_parties",
+};
+
+// localStorage에서 데이터 불러오기
+const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
+  try {
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      return JSON.parse(stored) as T;
+    }
+  } catch (error) {
+    console.error(`Failed to load ${key} from localStorage:`, error);
+  }
+  return defaultValue;
+};
+
+// localStorage에 데이터 저장하기
+const saveToStorage = <T,>(key: string, value: T): void => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error(`Failed to save ${key} to localStorage:`, error);
+  }
+};
+
 function App() {
-  const [characters, setCharacters] = useState<Character[]>([]);
-  const [parties, setParties] = useState<Party[]>([]);
+  const [characters, setCharacters] = useState<Character[]>(() =>
+    loadFromStorage(STORAGE_KEYS.CHARACTERS, [])
+  );
+  const [parties, setParties] = useState<Party[]>(() =>
+    loadFromStorage(STORAGE_KEYS.PARTIES, [])
+  );
   const [toast, setToast] = useState<{
     message: string;
     type: "error" | "success";
   } | null>(null);
+
+  // 캐릭터 변경 시 localStorage에 저장
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.CHARACTERS, characters);
+  }, [characters]);
+
+  // 파티 변경 시 localStorage에 저장
+  useEffect(() => {
+    saveToStorage(STORAGE_KEYS.PARTIES, parties);
+  }, [parties]);
 
   // 토스트 메시지 표시
   const showToast = (message: string, type: "error" | "success" = "error") => {
