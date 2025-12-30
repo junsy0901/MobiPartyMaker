@@ -1,6 +1,7 @@
 import { CharacterForm } from "./components/CharacterForm";
 import { CharacterCard } from "./components/CharacterCard";
 import { PartyPanel } from "./components/PartyPanel";
+import { Toast } from "./components/Toast";
 import { usePartyMaker } from "./hooks";
 
 function App() {
@@ -32,17 +33,7 @@ function App() {
       </div>
 
       {/* 토스트 메시지 */}
-      {toast && (
-        <div
-          className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-xl shadow-xl animate-slide-in ${
-            toast.type === "error"
-              ? "bg-red-500/90 text-white"
-              : "bg-emerald-500/90 text-white"
-          }`}
-        >
-          {toast.message}
-        </div>
-      )}
+      {toast && <Toast message={toast.message} type={toast.type} />}
 
       <div className="relative max-w-[1800px] mx-auto p-6">
         {/* 헤더 */}
@@ -241,21 +232,8 @@ function App() {
         </footer>
       </div>
 
-      {/* 애니메이션 스타일 */}
+      {/* 스크롤바 스타일 */}
       <style>{`
-        @keyframes slide-in {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        .animate-slide-in {
-          animation: slide-in 0.3s ease-out;
-        }
         .scrollbar-thin::-webkit-scrollbar {
           width: 6px;
           height: 6px;
