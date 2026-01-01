@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
-import type { Character, Party, PartyCondition } from "../types";
+import type { Character, Party, PartyCondition, TimeSlot, AccountTimeSlots } from "../types";
+import { TIME_SLOTS } from "../types";
 import { PARTY_SIZE } from "../constants/classes";
 
 interface Toast {
@@ -11,6 +12,10 @@ export function usePartyMaker() {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [parties, setParties] = useState<Party[]>([]);
   const [toast, setToast] = useState<Toast | null>(null);
+  
+  // 시간 모드 상태
+  const [isTimeMode, setIsTimeMode] = useState(false);
+  const [accountTimeSlots, setAccountTimeSlots] = useState<AccountTimeSlots>({});
 
   // 토스트 메시지 표시
   const showToast = useCallback(
@@ -19,6 +24,48 @@ export function usePartyMaker() {
       setTimeout(() => setToast(null), 3000);
     },
     []
+  );
+
+  // 시간 모드 토글
+  const handleToggleTimeMode = useCallback((enabled: boolean) => {
+    setIsTimeMode(enabled);
+    
+    if (enabled) {
+      // 시간 모드 활성화: 8시~12시 파티 자동 생성
+      const timeParties: Party[] = TIME_SLOTS.map((hour) => ({
+        id: `time-party-${hour}-${Date.now()}`,
+        name: `${hour}시`,
+        slots: Array(PARTY_SIZE).fill(null),
+        conditions: [],
+        timeSlot: hour,
+      }));
+      setParties(timeParties);
+    } else {
+      // 시간 모드 비활성화: 기존 파티 초기화
+      setParties([]);
+    }
+  }, []);
+
+  // 계정의 가능 시간 업데이트
+  const handleUpdateAccountTimeSlots = useCallback(
+    (accountName: string, timeSlots: TimeSlot[]) => {
+      setAccountTimeSlots((prev) => ({
+        ...prev,
+        [accountName]: timeSlots,
+      }));
+    },
+    []
+  );
+
+  // 계정이 특정 시간대에 가능한지 확인
+  const isAccountAvailableAt = useCallback(
+    (accountName: string, timeSlot: TimeSlot) => {
+      const slots = accountTimeSlots[accountName];
+      // 시간 설정이 없으면 모든 시간 가능 (기본값)
+      if (!slots || slots.length === 0) return true;
+      return slots.includes(timeSlot);
+    },
+    [accountTimeSlots]
   );
 
   // 파티에 배치된 캐릭터인지 확인
@@ -63,18 +110,37 @@ export function usePartyMaker() {
     setCharacters((prev) => prev.filter((c) => c.id !== characterId));
   }, []);
 
-  // 파티 생성
-  const handleCreateParty = useCallback(() => {
+  // 파티 생성 (시간 모드일 때는 시간대 지정 필요)
+  const handleCreateParty = useCallback((timeSlot?: TimeSlot) => {
     setParties((prev) => {
-      const newParty: Party = {
-        id: `party-${Date.now()}`,
-        name: `파티 ${prev.length + 1}`,
-        slots: Array(PARTY_SIZE).fill(null),
-        conditions: [],
-      };
-      return [...prev, newParty];
+      if (isTimeMode && timeSlot) {
+        // 시간 모드: 해당 시간대의 파티 개수 계산
+        const sameTimeParties = prev.filter((p) => p.timeSlot === timeSlot);
+        const newParty: Party = {
+          id: `time-party-${timeSlot}-${Date.now()}`,
+          name: `${timeSlot}시 (${sameTimeParties.length + 1})`,
+          slots: Array(PARTY_SIZE).fill(null),
+          conditions: [],
+          timeSlot,
+        };
+        // 같은 시간대 파티들 뒤에 삽입
+        const insertIndex = prev.findIndex((p) => p.timeSlot && p.timeSlot > timeSlot);
+        if (insertIndex === -1) {
+          return [...prev, newParty];
+        }
+        return [...prev.slice(0, insertIndex), newParty, ...prev.slice(insertIndex)];
+      } else {
+        // 일반 모드
+        const newParty: Party = {
+          id: `party-${Date.now()}`,
+          name: `파티 ${prev.length + 1}`,
+          slots: Array(PARTY_SIZE).fill(null),
+          conditions: [],
+        };
+        return [...prev, newParty];
+      }
     });
-  }, []);
+  }, [isTimeMode]);
 
   // 파티 삭제
   const handleRemoveParty = useCallback((partyId: string) => {
@@ -103,6 +169,19 @@ export function usePartyMaker() {
     (partyId: string, slotIndex: number, character: Character) => {
       const targetParty = parties.find((p) => p.id === partyId);
       if (!targetParty) return;
+
+      // 시간 모드에서 시간 제한 체크
+      if (isTimeMode && targetParty.timeSlot) {
+        const slots = accountTimeSlots[character.accountName];
+        // 시간 설정이 있고, 해당 시간에 가능하지 않은 경우
+        if (slots && slots.length > 0 && !slots.includes(targetParty.timeSlot)) {
+          showToast(
+            `${character.accountName} 계정은 ${targetParty.timeSlot}시에 참여할 수 없습니다!`,
+            "error"
+          );
+          return;
+        }
+      }
 
       // 드래그한 캐릭터의 원래 위치 찾기
       let sourcePartyId: string | null = null;
@@ -214,7 +293,7 @@ export function usePartyMaker() {
         })
       );
     },
-    [parties, showToast]
+    [parties, showToast, isTimeMode, accountTimeSlots]
   );
 
   // 파티에서 캐릭터 제거
@@ -268,8 +347,29 @@ export function usePartyMaker() {
       slots: Array(p.slots.length).fill(null) as (typeof p.slots),
     }));
 
-    // 사용된 캐릭터 추적
+    // 사용된 캐릭터 추적 (시간 모드에서는 시간대별로 추적)
     const usedCharIds = new Set<string>();
+    // 시간 모드: 시간대별로 사용된 캐릭터 추적 (같은 시간대에는 같은 캐릭터 배치 불가)
+    const usedCharIdsByTime: Record<TimeSlot, Set<string>> = {
+      8: new Set(),
+      9: new Set(),
+      10: new Set(),
+      11: new Set(),
+      12: new Set(),
+    };
+
+    // 캐릭터가 특정 시간대에 가능한지 확인하는 헬퍼 함수
+    const canAssignToTime = (char: Character, timeSlot: TimeSlot | undefined): boolean => {
+      if (!isTimeMode || !timeSlot) return true;
+      
+      // 해당 시간대에 이미 배치된 캐릭터인지 확인
+      if (usedCharIdsByTime[timeSlot].has(char.id)) return false;
+      
+      // 계정의 가능 시간 확인
+      const slots = accountTimeSlots[char.accountName];
+      if (!slots || slots.length === 0) return true; // 설정 없으면 모든 시간 가능
+      return slots.includes(timeSlot);
+    };
 
     // 1단계: 조건이 있는 파티에 조건을 만족시키는 캐릭터 우선 배치
     for (const party of newParties) {
@@ -279,12 +379,12 @@ export function usePartyMaker() {
       const usedAccounts = new Set<string>();
 
       for (const condition of party.conditions) {
-        // 조건에 맞는 캐릭터 찾기
+        // 조건에 맞는 캐릭터 찾기 (시간 조건 포함)
         const matchingChars = sortedChars.filter(
           (char) =>
             condition.classNames.includes(char.className) &&
-            !usedCharIds.has(char.id) &&
-            !usedAccounts.has(char.accountName)
+            !usedAccounts.has(char.accountName) &&
+            canAssignToTime(char, party.timeSlot)
         );
 
         let filled = 0;
@@ -298,19 +398,21 @@ export function usePartyMaker() {
           party.slots[emptySlotIndex] = char;
           usedCharIds.add(char.id);
           usedAccounts.add(char.accountName);
+          if (party.timeSlot) {
+            usedCharIdsByTime[party.timeSlot].add(char.id);
+          }
           filled++;
         }
       }
     }
 
     // 2단계: 남은 캐릭터를 빈 슬롯에 배치 (전투력 순)
-    const remainingChars = sortedChars.filter(
-      (char) => !usedCharIds.has(char.id)
-    );
-
-    for (const char of remainingChars) {
+    for (const char of sortedChars) {
       // 빈 슬롯이 있는 파티 찾기 (같은 계정이 없는 파티)
       for (const party of newParties) {
+        // 시간 조건 확인
+        if (!canAssignToTime(char, party.timeSlot)) continue;
+
         const usedAccounts = new Set(
           party.slots.filter((s) => s !== null).map((s) => s!.accountName)
         );
@@ -322,6 +424,9 @@ export function usePartyMaker() {
 
         party.slots[emptySlotIndex] = char;
         usedCharIds.add(char.id);
+        if (party.timeSlot) {
+          usedCharIdsByTime[party.timeSlot].add(char.id);
+        }
         break;
       }
     }
@@ -334,7 +439,7 @@ export function usePartyMaker() {
     } else {
       showToast("배치할 수 있는 캐릭터가 없습니다.", "error");
     }
-  }, [parties, characters, showToast]);
+  }, [parties, characters, showToast, isTimeMode, accountTimeSlots]);
 
   // 배치되지 않은 캐릭터만 필터링
   const availableCharacters = useMemo(
@@ -372,6 +477,10 @@ export function usePartyMaker() {
     availableCharacters,
     groupedCharacters,
 
+    // 시간 모드 상태
+    isTimeMode,
+    accountTimeSlots,
+
     // Character actions
     handleAddCharacter,
     handleRemoveCharacter,
@@ -387,6 +496,11 @@ export function usePartyMaker() {
     handleRemoveFromParty,
     handleRemoveCharacterFromAllParties,
     handleAutoAssign,
+
+    // 시간 모드 actions
+    handleToggleTimeMode,
+    handleUpdateAccountTimeSlots,
+    isAccountAvailableAt,
   };
 }
 

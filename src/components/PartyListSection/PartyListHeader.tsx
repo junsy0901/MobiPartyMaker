@@ -4,6 +4,7 @@ interface PartyListHeaderProps {
   onExportCSV: () => void;
   onAutoAssignClick: () => void;
   onCreateParty: () => void;
+  isTimeMode: boolean;
 }
 
 export function PartyListHeader({
@@ -12,12 +13,13 @@ export function PartyListHeader({
   onExportCSV,
   onAutoAssignClick,
   onCreateParty,
+  isTimeMode,
 }: PartyListHeaderProps) {
   return (
     <div className="flex items-center justify-between mb-4">
       <h2 className="text-lg font-bold text-white flex items-center gap-2">
-        <span className="text-xl">🎮</span>
-        파티 목록
+        <span className="text-xl">{isTimeMode ? "🕐" : "🎮"}</span>
+        {isTimeMode ? "시간별 파티 목록" : "파티 목록"}
       </h2>
       <div className="flex items-center gap-2">
         <button
@@ -45,7 +47,10 @@ export function PartyListHeader({
           onClick={onAutoAssignClick}
           disabled={isAutoAssignDisabled}
           className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-xl hover:from-emerald-500 hover:to-teal-500 disabled:from-gray-600 disabled:to-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 text-sm"
-          title="조건에 맞게 캐릭터를 자동으로 파티에 배치합니다"
+          title={isTimeMode 
+            ? "시간 조건과 직업 조건에 맞게 캐릭터를 자동으로 파티에 배치합니다" 
+            : "조건에 맞게 캐릭터를 자동으로 파티에 배치합니다"
+          }
         >
           <svg
             className="w-4 h-4"
@@ -62,25 +67,27 @@ export function PartyListHeader({
           </svg>
           자동 배치
         </button>
-        <button
-          onClick={onCreateParty}
-          className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-500 hover:to-purple-500 transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 text-sm"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {!isTimeMode && (
+          <button
+            onClick={onCreateParty}
+            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-500 hover:to-purple-500 transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 text-sm"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          파티 생성
-        </button>
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            파티 생성
+          </button>
+        )}
       </div>
     </div>
   );

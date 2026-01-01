@@ -1,5 +1,6 @@
 import { useState } from "react";
-import type { Character } from "../../types";
+import type { Character, TimeSlot, AccountTimeSlots } from "../../types";
+import { TIME_SLOTS } from "../../types";
 import { CharacterCard } from "../CharacterCard";
 
 interface ApplicantListProps {
@@ -10,6 +11,9 @@ interface ApplicantListProps {
   isCharacterInAnyParty: (characterId: string) => boolean;
   onRemoveCharacter: (characterId: string) => void;
   onRemoveFromAllParties: (characterId: string) => void;
+  isTimeMode: boolean;
+  accountTimeSlots: AccountTimeSlots;
+  onUpdateAccountTimeSlots: (accountName: string, timeSlots: TimeSlot[]) => void;
 }
 
 export function ApplicantList({
@@ -20,6 +24,9 @@ export function ApplicantList({
   isCharacterInAnyParty,
   onRemoveCharacter,
   onRemoveFromAllParties,
+  isTimeMode,
+  accountTimeSlots,
+  onUpdateAccountTimeSlots,
 }: ApplicantListProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -79,6 +86,22 @@ export function ApplicantList({
               (c) => !isCharacterInAnyParty(c.id)
             ).length;
 
+            const currentTimeSlots = accountTimeSlots[accountName] || [];
+            
+            const handleTimeSlotToggle = (hour: TimeSlot) => {
+              if (currentTimeSlots.includes(hour)) {
+                onUpdateAccountTimeSlots(
+                  accountName,
+                  currentTimeSlots.filter((h) => h !== hour)
+                );
+              } else {
+                onUpdateAccountTimeSlots(
+                  accountName,
+                  [...currentTimeSlots, hour].sort((a, b) => a - b)
+                );
+              }
+            };
+
             return (
               <div
                 key={accountName}
@@ -102,6 +125,37 @@ export function ApplicantList({
                     </span>
                   </div>
                 </div>
+
+                {/* 시간 모드일 때 가능 시간 선택 */}
+                {isTimeMode && (
+                  <div className="mb-2 pb-2 border-b border-[#2d2d44]">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <span className="text-xs text-gray-400 mr-1">🕐</span>
+                      {TIME_SLOTS.map((hour) => {
+                        const isSelected = currentTimeSlots.length === 0 || currentTimeSlots.includes(hour);
+                        return (
+                          <button
+                            key={hour}
+                            onClick={() => handleTimeSlotToggle(hour)}
+                            className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                              isSelected
+                                ? "bg-indigo-500/30 text-indigo-300 border border-indigo-500/50"
+                                : "bg-[#2d2d44] text-gray-500 border border-transparent"
+                            }`}
+                            title={isSelected ? `${hour}시 가능` : `${hour}시 불가능 (클릭하여 가능하게)`}
+                          >
+                            {hour}시
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {currentTimeSlots.length === 0 && (
+                      <span className="text-xs text-gray-500 mt-1 block">
+                        모든 시간 가능 (클릭하여 제한)
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {/* 캐릭터 목록 */}
                 <div className="space-y-2">

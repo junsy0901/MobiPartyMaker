@@ -1,5 +1,6 @@
 import { useState } from "react";
-import type { Character, Party, PartyCondition } from "../../types";
+import type { Character, Party, PartyCondition, TimeSlot } from "../../types";
+import { TIME_SLOTS } from "../../types";
 import { PartyPanel } from "../PartyPanel";
 import { ConfirmModal } from "../ConfirmModal";
 import { PartyListHeader } from "./PartyListHeader";
@@ -9,13 +10,15 @@ interface PartyListSectionProps {
   parties: Party[];
   availableCharactersCount: number;
   totalCharactersCount: number;
-  onCreateParty: () => void;
+  onCreateParty: (timeSlot?: TimeSlot) => void;
   onAutoAssign: () => void;
   onDropCharacter: (partyId: string, slotIndex: number, character: Character) => void;
   onRemoveCharacter: (partyId: string, slotIndex: number) => void;
   onRemoveParty: (partyId: string) => void;
   onUpdatePartyName: (partyId: string, name: string) => void;
   onUpdateConditions: (partyId: string, conditions: PartyCondition[]) => void;
+  isTimeMode: boolean;
+  isAccountAvailableAt: (accountName: string, timeSlot: TimeSlot) => boolean;
 }
 
 export function PartyListSection({
@@ -29,6 +32,8 @@ export function PartyListSection({
   onRemoveParty,
   onUpdatePartyName,
   onUpdateConditions,
+  isTimeMode,
+  isAccountAvailableAt,
 }: PartyListSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -48,6 +53,14 @@ export function PartyListSection({
     exportToCSV(parties);
   };
 
+  // 시간 모드에서 시간대별로 파티 그룹화
+  const groupedPartiesByTime = isTimeMode
+    ? TIME_SLOTS.reduce((acc, hour) => {
+        acc[hour] = parties.filter((p) => p.timeSlot === hour);
+        return acc;
+      }, {} as Record<TimeSlot, Party[]>)
+    : null;
+
   return (
     <div className="flex-[5] flex flex-col">
       <PartyListHeader
@@ -55,11 +68,55 @@ export function PartyListSection({
         isAutoAssignDisabled={isAutoAssignDisabled}
         onExportCSV={handleExportCSV}
         onAutoAssignClick={handleAutoAssignClick}
-        onCreateParty={onCreateParty}
+        onCreateParty={() => onCreateParty()}
+        isTimeMode={isTimeMode}
       />
 
       {parties.length === 0 ? (
-        <EmptyPartyState onCreateParty={onCreateParty} />
+        <EmptyPartyState onCreateParty={() => onCreateParty()} isTimeMode={isTimeMode} />
+      ) : isTimeMode && groupedPartiesByTime ? (
+        <div className="space-y-6 flex-1 overflow-y-auto pr-2 scrollbar-thin">
+          {TIME_SLOTS.map((hour) => (
+            <div key={hour} className="space-y-3">
+              {/* 시간대 헤더 */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <span className="text-xl">🕐</span>
+                  {hour}시
+                  <span className="text-sm text-gray-400 font-normal">
+                    ({groupedPartiesByTime[hour].length}개 파티)
+                  </span>
+                </h3>
+                <button
+                  onClick={() => onCreateParty(hour)}
+                  className="px-3 py-1.5 bg-[#2d2d44] text-gray-300 hover:bg-[#3d3d54] rounded-lg text-sm transition-colors flex items-center gap-1"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  파티 추가
+                </button>
+              </div>
+              
+              {/* 해당 시간대 파티들 */}
+              <div className="space-y-3 pl-2 border-l-2 border-indigo-500/30">
+                {groupedPartiesByTime[hour].map((party) => (
+                  <PartyPanel
+                    key={party.id}
+                    party={party}
+                    onDropCharacter={onDropCharacter}
+                    onRemoveCharacter={onRemoveCharacter}
+                    onRemoveParty={onRemoveParty}
+                    onUpdatePartyName={onUpdatePartyName}
+                    onUpdateConditions={onUpdateConditions}
+                    isTimeMode={isTimeMode}
+                    isAccountAvailableAt={isAccountAvailableAt}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
         <div className="space-y-4 flex-1 overflow-y-auto pr-2 scrollbar-thin">
           {parties.map((party) => (
@@ -71,6 +128,8 @@ export function PartyListSection({
               onRemoveParty={onRemoveParty}
               onUpdatePartyName={onUpdatePartyName}
               onUpdateConditions={onUpdateConditions}
+              isTimeMode={isTimeMode}
+              isAccountAvailableAt={isAccountAvailableAt}
             />
           ))}
         </div>
@@ -90,35 +149,40 @@ export function PartyListSection({
   );
 }
 
-function EmptyPartyState({ onCreateParty }: { onCreateParty: () => void }) {
+function EmptyPartyState({ onCreateParty, isTimeMode }: { onCreateParty: () => void; isTimeMode: boolean }) {
   return (
     <div className="bg-[#1a1a2e] rounded-2xl p-10 border border-[#2d2d44] text-center flex-1 flex flex-col items-center justify-center">
-      <p className="text-4xl mb-3">🎯</p>
+      <p className="text-4xl mb-3">{isTimeMode ? "🕐" : "🎯"}</p>
       <h3 className="text-lg font-semibold text-white mb-2">
-        파티를 생성해주세요
+        {isTimeMode ? "시간 모드가 활성화되었습니다" : "파티를 생성해주세요"}
       </h3>
       <p className="text-gray-400 mb-4 text-sm">
-        파티를 생성하고 캐릭터를 드래그하여 배치하세요
+        {isTimeMode 
+          ? "시간 모드를 켜면 8시~12시 파티가 자동으로 생성됩니다"
+          : "파티를 생성하고 캐릭터를 드래그하여 배치하세요"
+        }
       </p>
-      <button
-        onClick={onCreateParty}
-        className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-500 hover:to-purple-500 transition-all inline-flex items-center gap-2 text-sm"
-      >
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      {!isTimeMode && (
+        <button
+          onClick={onCreateParty}
+          className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-500 hover:to-purple-500 transition-all inline-flex items-center gap-2 text-sm"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 4v16m8-8H4"
-          />
-        </svg>
-        첫 파티 만들기
-      </button>
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          첫 파티 만들기
+        </button>
+      )}
     </div>
   );
 }

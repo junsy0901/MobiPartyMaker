@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Character } from '../types';
+import type { Character, TimeSlot } from '../types';
 import { CharacterCard } from './CharacterCard';
 
 interface PartySlotProps {
@@ -7,9 +7,20 @@ interface PartySlotProps {
   character: Character | null;
   onDrop: (character: Character) => void;
   onRemove: () => void;
+  isTimeMode?: boolean;
+  timeSlot?: TimeSlot;
+  isAccountAvailableAt?: (accountName: string, timeSlot: TimeSlot) => boolean;
 }
 
-export function PartySlot({ index, character, onDrop, onRemove }: PartySlotProps) {
+export function PartySlot({ 
+  index, 
+  character, 
+  onDrop, 
+  onRemove,
+  isTimeMode,
+  timeSlot,
+  isAccountAvailableAt,
+}: PartySlotProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e: React.DragEvent) => {
