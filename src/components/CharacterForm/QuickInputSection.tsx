@@ -29,16 +29,14 @@ export function QuickInputSection({
     // 여러 줄 입력 시 첫 번째 줄의 캐릭터명을 계정명으로 자동 채우기 (항상 덮어쓰기)
     if (lines.length > 1) {
       const firstLine = lines[0];
-      if (firstLine.includes("/")) {
-        const parsed = parseLine(firstLine);
-        if (parsed) {
-          // 항상 첫 번째 캐릭터명으로 계정명 채우기
-          onAccountNameChange(parsed.charName);
-        }
+      const parsed = parseLine(firstLine);
+      if (parsed) {
+        // 항상 첫 번째 캐릭터명으로 계정명 채우기
+        onAccountNameChange(parsed.charName);
       }
     }
     // 한 줄만 있는 경우 기존처럼 필드에 자동 채우기
-    else if (lines.length === 1 && value.includes("/")) {
+    else if (lines.length === 1) {
       const parsed = parseLine(value);
       if (parsed) {
         onCharacterNameChange(parsed.charName);
@@ -70,10 +68,10 @@ export function QuickInputSection({
             value={quickInput}
             onChange={(e) => handleQuickInputChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={`캐릭터명 / 클래스 / 전투력 (예시)
+            placeholder={`캐릭터명 / 클래스 / 전투력 (또는 띄어쓰기)
 베롤 / 궁수 / 5.2
-베틀 / 힐러 / 4.8
-베럴 / 전사 / 4.8`}
+베틀 힐러 4.8
+베럴 전사 4.8`}
             rows={isMultiLine ? 8 : 6}
             className="w-full px-4 py-2.5 bg-gradient-to-r from-indigo-900/30 to-purple-900/30 border border-indigo-500/30 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all text-sm resize-none"
           />

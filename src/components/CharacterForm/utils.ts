@@ -27,14 +27,30 @@ export const findClassByPartialName = (input: string): ClassName | null => {
   return null;
 };
 
-// 한 줄 파싱 함수
+// 한 줄 파싱 함수 (슬래시 또는 띄어쓰기로 구분)
 export const parseLine = (
   line: string
 ): { charName: string; className: ClassName; power: number } | null => {
   const trimmedLine = line.trim();
-  if (!trimmedLine || !trimmedLine.includes("/")) return null;
+  if (!trimmedLine) return null;
 
-  const parts = trimmedLine.split("/").map((part) => part.trim());
+  let parts: string[];
+
+  // 슬래시가 있으면 슬래시로 분리
+  if (trimmedLine.includes("/")) {
+    parts = trimmedLine.split("/").map((part) => part.trim());
+  } else {
+    // 띄어쓰기로 분리 (마지막: 전투력, 그 앞: 클래스, 나머지: 캐릭터명)
+    const spaceParts = trimmedLine.split(/\s+/);
+    if (spaceParts.length < 3) return null;
+
+    const powerInput = spaceParts[spaceParts.length - 1];
+    const classInput = spaceParts[spaceParts.length - 2];
+    const charName = spaceParts.slice(0, -2).join(" ");
+
+    parts = [charName, classInput, powerInput];
+  }
+
   if (parts.length < 3) return null;
 
   const [charName, classInput, powerInput] = parts;
