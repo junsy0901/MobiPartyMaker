@@ -169,29 +169,25 @@ export function usePartyMaker() {
     []
   );
 
-  // 자동 파티 생성
+  // 자동 파티 재배치 (모든 슬롯 초기화 후 재배치)
   const handleAutoAssign = useCallback(() => {
     if (parties.length === 0) {
       showToast("먼저 파티를 생성해주세요!", "error");
       return;
     }
 
-    const availableChars = characters.filter(
-      (char) => !isCharacterInAnyParty(char.id)
-    );
-
-    if (availableChars.length === 0) {
-      showToast("배치 가능한 캐릭터가 없습니다!", "error");
+    if (characters.length === 0) {
+      showToast("배치할 캐릭터가 없습니다!", "error");
       return;
     }
 
     // 전투력 순으로 정렬 (높은 순)
-    const sortedChars = [...availableChars].sort((a, b) => b.power - a.power);
+    const sortedChars = [...characters].sort((a, b) => b.power - a.power);
 
-    // 새로운 파티 상태 복사
+    // 새로운 파티 상태 복사 (모든 슬롯 초기화)
     const newParties = parties.map((p) => ({
       ...p,
-      slots: [...p.slots],
+      slots: Array(p.slots.length).fill(null) as (typeof p.slots),
     }));
 
     // 사용된 캐릭터 추적
@@ -201,20 +197,10 @@ export function usePartyMaker() {
     for (const party of newParties) {
       if (party.conditions.length === 0) continue;
 
-      // 파티에 이미 있는 계정 추적
-      const usedAccounts = new Set(
-        party.slots.filter((s) => s !== null).map((s) => s!.accountName)
-      );
+      // 파티에 배치된 계정 추적
+      const usedAccounts = new Set<string>();
 
       for (const condition of party.conditions) {
-        // 현재 조건 충족 수 계산
-        const currentCount = party.slots.filter(
-          (slot) => slot && condition.classNames.includes(slot.className)
-        ).length;
-
-        const needed = condition.minCount - currentCount;
-        if (needed <= 0) continue;
-
         // 조건에 맞는 캐릭터 찾기
         const matchingChars = sortedChars.filter(
           (char) =>
@@ -225,7 +211,7 @@ export function usePartyMaker() {
 
         let filled = 0;
         for (const char of matchingChars) {
-          if (filled >= needed) break;
+          if (filled >= condition.minCount) break;
 
           // 빈 슬롯 찾기
           const emptySlotIndex = party.slots.findIndex((s) => s === null);
@@ -270,7 +256,7 @@ export function usePartyMaker() {
     } else {
       showToast("배치할 수 있는 캐릭터가 없습니다.", "error");
     }
-  }, [parties, characters, isCharacterInAnyParty, showToast]);
+  }, [parties, characters, showToast]);
 
   // 배치되지 않은 캐릭터만 필터링
   const availableCharacters = useMemo(

@@ -1,9 +1,12 @@
+import { useState } from "react";
 import type { Character, Party, PartyCondition } from "../../types";
 import { PartyPanel } from "../PartyPanel";
+import { ConfirmModal } from "../ConfirmModal";
 
 interface PartyListSectionProps {
   parties: Party[];
   availableCharactersCount: number;
+  totalCharactersCount: number;
   onCreateParty: () => void;
   onAutoAssign: () => void;
   onDropCharacter: (partyId: string, slotIndex: number, character: Character) => void;
@@ -16,6 +19,7 @@ interface PartyListSectionProps {
 export function PartyListSection({
   parties,
   availableCharactersCount,
+  totalCharactersCount,
   onCreateParty,
   onAutoAssign,
   onDropCharacter,
@@ -24,7 +28,18 @@ export function PartyListSection({
   onUpdatePartyName,
   onUpdateConditions,
 }: PartyListSectionProps) {
-  const isAutoAssignDisabled = parties.length === 0 || availableCharactersCount === 0;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const isAutoAssignDisabled = parties.length === 0 || totalCharactersCount === 0;
+
+  const handleAutoAssignClick = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmAutoAssign = () => {
+    setIsModalOpen(false);
+    onAutoAssign();
+  };
 
   return (
     <div className="flex-[5] flex flex-col">
@@ -35,7 +50,7 @@ export function PartyListSection({
         </h2>
         <div className="flex items-center gap-2">
           <button
-            onClick={onAutoAssign}
+            onClick={handleAutoAssignClick}
             disabled={isAutoAssignDisabled}
             className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-xl hover:from-emerald-500 hover:to-teal-500 disabled:from-gray-600 disabled:to-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 active:scale-95 shadow-lg flex items-center gap-2 text-sm"
             title="조건에 맞게 캐릭터를 자동으로 파티에 배치합니다"
@@ -94,6 +109,17 @@ export function PartyListSection({
           ))}
         </div>
       )}
+
+      {/* 자동 배치 경고 모달 */}
+      <ConfirmModal
+        isOpen={isModalOpen}
+        title="자동 배치 실행"
+        message={`자동 배치를 실행하면 현재 파티에 배치된 모든 캐릭터가 초기화되고,\n파티 조건에 맞추어 다시 배치됩니다.\n\n계속하시겠습니까?`}
+        confirmText="재배치"
+        cancelText="취소"
+        onConfirm={handleConfirmAutoAssign}
+        onCancel={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }
@@ -130,4 +156,3 @@ function EmptyPartyState({ onCreateParty }: { onCreateParty: () => void }) {
     </div>
   );
 }
-

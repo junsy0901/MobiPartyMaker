@@ -67,6 +67,7 @@ function App() {
           <PartyListSection
             parties={parties}
             availableCharactersCount={availableCharacters.length}
+            totalCharactersCount={characters.length}
             onCreateParty={handleCreateParty}
             onAutoAssign={handleAutoAssign}
             onDropCharacter={handleDropCharacter}
