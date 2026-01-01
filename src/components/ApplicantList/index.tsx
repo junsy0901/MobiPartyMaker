@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Character } from "../../types";
 import { CharacterCard } from "../CharacterCard";
 
@@ -8,6 +9,7 @@ interface ApplicantListProps {
   isAccountFullyAssigned: (accountName: string) => boolean;
   isCharacterInAnyParty: (characterId: string) => boolean;
   onRemoveCharacter: (characterId: string) => void;
+  onRemoveFromAllParties: (characterId: string) => void;
 }
 
 export function ApplicantList({
@@ -17,9 +19,44 @@ export function ApplicantList({
   isAccountFullyAssigned,
   isCharacterInAnyParty,
   onRemoveCharacter,
+  onRemoveFromAllParties,
 }: ApplicantListProps) {
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    try {
+      const data = e.dataTransfer.getData("application/json");
+      const droppedCharacter = JSON.parse(data) as Character;
+      onRemoveFromAllParties(droppedCharacter.id);
+    } catch (error) {
+      console.error("드롭 처리 중 오류 발생:", error);
+    }
+  };
+
   return (
-    <div className="flex-[1] bg-[#1a1a2e] rounded-2xl p-4 border border-[#2d2d44] shadow-xl flex flex-col">
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`flex-[3] h-fit self-start sticky top-6 bg-[#1a1a2e] rounded-2xl p-4 border-2 shadow-xl flex flex-col transition-all ${
+        isDragOver
+          ? "border-emerald-400 bg-emerald-500/5"
+          : "border-[#2d2d44]"
+      }`}
+    >
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <span className="text-xl">👥 신청자 목록</span>
@@ -35,7 +72,7 @@ export function ApplicantList({
           <p>등록된 캐릭터가 없습니다. 위에서 캐릭터를 추가해주세요.</p>
         </div>
       ) : (
-        <div className="flex flex-wrap gap-4 flex-1 overflow-y-auto pr-2 scrollbar-thin">
+        <div className="grid grid-cols-2 gap-4 overflow-y-auto max-h-[calc(100vh-240px)] pr-2 scrollbar-thin snap-y snap-mandatory">
           {Object.entries(groupedCharacters).map(([accountName, chars]) => {
             const allAssigned = isAccountFullyAssigned(accountName);
             const availableCount = chars.filter(
@@ -45,7 +82,7 @@ export function ApplicantList({
             return (
               <div
                 key={accountName}
-                className={`flex-shrink-0 bg-gradient-to-br from-[#12121f] to-[#0f0f1a] rounded-xl border p-3 ${
+                className={`bg-gradient-to-br from-[#12121f] to-[#0f0f1a] rounded-xl border p-3 h-fit snap-start ${
                   allAssigned
                     ? "border-[#2d2d44]/50 opacity-50"
                     : "border-[#3d3d54]"
@@ -53,7 +90,7 @@ export function ApplicantList({
               >
                 {/* 계정 헤더 */}
                 <div className="flex items-center gap-2 mb-2 pb-2 border-b border-[#2d2d44]">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
                     {accountName.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">

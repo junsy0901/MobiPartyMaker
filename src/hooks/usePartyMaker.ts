@@ -98,40 +98,117 @@ export function usePartyMaker() {
     []
   );
 
-  // 캐릭터를 파티에 드롭
+  // 캐릭터를 파티에 드롭 (스왑 지원)
   const handleDropCharacter = useCallback(
     (partyId: string, slotIndex: number, character: Character) => {
-      const party = parties.find((p) => p.id === partyId);
-      if (!party) return;
+      const targetParty = parties.find((p) => p.id === partyId);
+      if (!targetParty) return;
 
-      // 같은 계정의 다른 캐릭터가 이미 파티에 있는지 확인
-      const existingAccountCharacter = party.slots.find(
-        (slot) =>
-          slot !== null &&
-          slot.accountName === character.accountName &&
-          slot.id !== character.id
-      );
+      // 드래그한 캐릭터의 원래 위치 찾기
+      let sourcePartyId: string | null = null;
+      let sourceSlotIndex: number | null = null;
+      for (const p of parties) {
+        const idx = p.slots.findIndex((s) => s?.id === character.id);
+        if (idx !== -1) {
+          sourcePartyId = p.id;
+          sourceSlotIndex = idx;
+          break;
+        }
+      }
 
-      if (existingAccountCharacter) {
-        showToast(
-          `이미 같은 계정(${character.accountName})의 캐릭터가 이 파티에 있습니다!`,
-          "error"
-        );
+      // 대상 슬롯에 있는 캐릭터
+      const targetSlotCharacter = targetParty.slots[slotIndex];
+
+      // 같은 위치에 드롭한 경우 무시
+      if (sourcePartyId === partyId && sourceSlotIndex === slotIndex) {
         return;
       }
 
-      // 해당 슬롯에 이미 캐릭터가 있으면 교체
-      setParties((prev) =>
-        prev.map((p) => {
-          if (p.id !== partyId) return p;
+      // 스왑 시 같은 계정 체크
+      if (targetSlotCharacter) {
+        // 동일 파티 내 스왑인 경우: 계정 체크 불필요 (이미 같은 파티에 있으므로)
+        const isSamePartySwap = sourcePartyId === partyId;
 
-          // 같은 캐릭터가 이미 다른 슬롯에 있다면 제거
-          const newSlots = p.slots.map((slot) =>
-            slot?.id === character.id ? null : slot
+        if (!isSamePartySwap) {
+          // 드래그한 캐릭터가 대상 파티로 이동할 때 같은 계정 체크
+          // (대상 슬롯의 캐릭터와 드래그한 캐릭터 자신은 제외)
+          const sameAccountInTargetParty = targetParty.slots.find(
+            (slot) =>
+              slot !== null &&
+              slot.id !== targetSlotCharacter.id &&
+              slot.id !== character.id &&
+              slot.accountName === character.accountName
           );
 
-          // 지정된 슬롯에 캐릭터 배치
-          newSlots[slotIndex] = character;
+          if (sameAccountInTargetParty) {
+            showToast(
+              `이미 같은 계정(${character.accountName})의 캐릭터가 이 파티에 있습니다!`,
+              "error"
+            );
+            return;
+          }
+
+          // 대상 슬롯의 캐릭터가 소스 파티로 이동할 때 같은 계정 체크
+          if (sourcePartyId) {
+            const sourceParty = parties.find((p) => p.id === sourcePartyId);
+            if (sourceParty) {
+              const sameAccountInSourceParty = sourceParty.slots.find(
+                (slot) =>
+                  slot !== null &&
+                  slot.id !== character.id &&
+                  slot.id !== targetSlotCharacter.id &&
+                  slot.accountName === targetSlotCharacter.accountName
+              );
+
+              if (sameAccountInSourceParty) {
+                showToast(
+                  `같은 계정(${targetSlotCharacter.accountName})의 캐릭터가 원래 파티에 있어 스왑할 수 없습니다!`,
+                  "error"
+                );
+                return;
+              }
+            }
+          }
+        }
+      } else {
+        // 대상 슬롯이 비어있는 경우 기존 로직 (같은 계정 체크)
+        const existingAccountCharacter = targetParty.slots.find(
+          (slot) =>
+            slot !== null &&
+            slot.accountName === character.accountName &&
+            slot.id !== character.id
+        );
+
+        if (existingAccountCharacter) {
+          showToast(
+            `이미 같은 계정(${character.accountName})의 캐릭터가 이 파티에 있습니다!`,
+            "error"
+          );
+          return;
+        }
+      }
+
+      setParties((prev) =>
+        prev.map((p) => {
+          const newSlots = [...p.slots];
+
+          // 소스 파티에서 드래그한 캐릭터 제거 및 스왑 처리
+          if (p.id === sourcePartyId && sourceSlotIndex !== null) {
+            // 스왑: 대상 슬롯의 캐릭터를 소스 위치로 이동
+            newSlots[sourceSlotIndex] = targetSlotCharacter || null;
+          } else {
+            // 다른 파티에서 드래그한 캐릭터 제거 (신청자 목록에서 온 경우 해당 없음)
+            for (let i = 0; i < newSlots.length; i++) {
+              if (newSlots[i]?.id === character.id) {
+                newSlots[i] = null;
+              }
+            }
+          }
+
+          // 대상 파티에 드래그한 캐릭터 배치
+          if (p.id === partyId) {
+            newSlots[slotIndex] = character;
+          }
 
           return { ...p, slots: newSlots };
         })
@@ -155,29 +232,40 @@ export function usePartyMaker() {
     []
   );
 
-  // 자동 파티 생성
+  // 모든 파티에서 캐릭터 제거 (파티 → 신청자 목록으로 드롭 시)
+  const handleRemoveCharacterFromAllParties = useCallback(
+    (characterId: string) => {
+      setParties((prev) =>
+        prev.map((p) => ({
+          ...p,
+          slots: p.slots.map((slot) =>
+            slot?.id === characterId ? null : slot
+          ),
+        }))
+      );
+    },
+    []
+  );
+
+  // 자동 파티 재배치 (모든 슬롯 초기화 후 재배치)
   const handleAutoAssign = useCallback(() => {
     if (parties.length === 0) {
       showToast("먼저 파티를 생성해주세요!", "error");
       return;
     }
 
-    const availableChars = characters.filter(
-      (char) => !isCharacterInAnyParty(char.id)
-    );
-
-    if (availableChars.length === 0) {
-      showToast("배치 가능한 캐릭터가 없습니다!", "error");
+    if (characters.length === 0) {
+      showToast("배치할 캐릭터가 없습니다!", "error");
       return;
     }
 
     // 전투력 순으로 정렬 (높은 순)
-    const sortedChars = [...availableChars].sort((a, b) => b.power - a.power);
+    const sortedChars = [...characters].sort((a, b) => b.power - a.power);
 
-    // 새로운 파티 상태 복사
+    // 새로운 파티 상태 복사 (모든 슬롯 초기화)
     const newParties = parties.map((p) => ({
       ...p,
-      slots: [...p.slots],
+      slots: Array(p.slots.length).fill(null) as (typeof p.slots),
     }));
 
     // 사용된 캐릭터 추적
@@ -187,20 +275,10 @@ export function usePartyMaker() {
     for (const party of newParties) {
       if (party.conditions.length === 0) continue;
 
-      // 파티에 이미 있는 계정 추적
-      const usedAccounts = new Set(
-        party.slots.filter((s) => s !== null).map((s) => s!.accountName)
-      );
+      // 파티에 배치된 계정 추적
+      const usedAccounts = new Set<string>();
 
       for (const condition of party.conditions) {
-        // 현재 조건 충족 수 계산
-        const currentCount = party.slots.filter(
-          (slot) => slot && condition.classNames.includes(slot.className)
-        ).length;
-
-        const needed = condition.minCount - currentCount;
-        if (needed <= 0) continue;
-
         // 조건에 맞는 캐릭터 찾기
         const matchingChars = sortedChars.filter(
           (char) =>
@@ -211,7 +289,7 @@ export function usePartyMaker() {
 
         let filled = 0;
         for (const char of matchingChars) {
-          if (filled >= needed) break;
+          if (filled >= condition.minCount) break;
 
           // 빈 슬롯 찾기
           const emptySlotIndex = party.slots.findIndex((s) => s === null);
@@ -256,7 +334,7 @@ export function usePartyMaker() {
     } else {
       showToast("배치할 수 있는 캐릭터가 없습니다.", "error");
     }
-  }, [parties, characters, isCharacterInAnyParty, showToast]);
+  }, [parties, characters, showToast]);
 
   // 배치되지 않은 캐릭터만 필터링
   const availableCharacters = useMemo(
@@ -307,6 +385,7 @@ export function usePartyMaker() {
     handleUpdatePartyConditions,
     handleDropCharacter,
     handleRemoveFromParty,
+    handleRemoveCharacterFromAllParties,
     handleAutoAssign,
   };
 }

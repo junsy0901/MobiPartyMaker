@@ -14,7 +14,7 @@ export function CharacterInfo({ character }: CharacterInfoProps) {
         </span>
       </div>
       <div className="flex items-center gap-2 text-sm">
-        <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded-md text-xs font-medium">
+        <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded-md text-xs font-medium truncate">
           {character.className}
         </span>
       </div>

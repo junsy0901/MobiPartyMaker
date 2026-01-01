@@ -21,6 +21,7 @@ function App() {
     handleUpdatePartyConditions,
     handleDropCharacter,
     handleRemoveFromParty,
+    handleRemoveCharacterFromAllParties,
     handleAutoAssign,
   } = usePartyMaker();
 
@@ -60,11 +61,13 @@ function App() {
             isAccountFullyAssigned={isAccountFullyAssigned}
             isCharacterInAnyParty={isCharacterInAnyParty}
             onRemoveCharacter={handleRemoveCharacter}
+            onRemoveFromAllParties={handleRemoveCharacterFromAllParties}
           />
 
           <PartyListSection
             parties={parties}
             availableCharactersCount={availableCharacters.length}
+            totalCharactersCount={characters.length}
             onCreateParty={handleCreateParty}
             onAutoAssign={handleAutoAssign}
             onDropCharacter={handleDropCharacter}

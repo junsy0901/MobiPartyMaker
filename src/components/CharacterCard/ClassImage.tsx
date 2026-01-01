@@ -9,7 +9,7 @@ interface ClassImageProps {
 export function ClassImage({ className, isInParty = false }: ClassImageProps) {
   return (
     <div className="relative">
-      <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-[#2d2d44] shadow-lg">
+      <div className="w-12 h-12 rounded-xl overflow-hidden ring-2 ring-[#2d2d44] shadow-lg">
         <img
           src={getClassImagePath(className)}
           alt={className}
