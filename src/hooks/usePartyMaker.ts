@@ -120,18 +120,17 @@ export function usePartyMaker() {
         return;
       }
 
-      // 해당 슬롯에 이미 캐릭터가 있으면 교체
       setParties((prev) =>
         prev.map((p) => {
-          if (p.id !== partyId) return p;
-
-          // 같은 캐릭터가 이미 다른 슬롯에 있다면 제거
+          // 모든 파티에서 해당 캐릭터 제거 (다른 파티 간 이동 지원)
           const newSlots = p.slots.map((slot) =>
             slot?.id === character.id ? null : slot
           );
 
-          // 지정된 슬롯에 캐릭터 배치
-          newSlots[slotIndex] = character;
+          // 대상 파티인 경우 지정된 슬롯에 캐릭터 배치
+          if (p.id === partyId) {
+            newSlots[slotIndex] = character;
+          }
 
           return { ...p, slots: newSlots };
         })
@@ -150,6 +149,21 @@ export function usePartyMaker() {
           newSlots[slotIndex] = null;
           return { ...p, slots: newSlots };
         })
+      );
+    },
+    []
+  );
+
+  // 모든 파티에서 캐릭터 제거 (파티 → 신청자 목록으로 드롭 시)
+  const handleRemoveCharacterFromAllParties = useCallback(
+    (characterId: string) => {
+      setParties((prev) =>
+        prev.map((p) => ({
+          ...p,
+          slots: p.slots.map((slot) =>
+            slot?.id === characterId ? null : slot
+          ),
+        }))
       );
     },
     []
@@ -307,6 +321,7 @@ export function usePartyMaker() {
     handleUpdatePartyConditions,
     handleDropCharacter,
     handleRemoveFromParty,
+    handleRemoveCharacterFromAllParties,
     handleAutoAssign,
   };
 }

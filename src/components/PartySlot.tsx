@@ -54,7 +54,7 @@ export function PartySlot({ index, character, onDrop, onRemove }: PartySlotProps
         <CharacterCard
           character={character}
           onRemove={onRemove}
-          isDraggable={false}
+          isDraggable={true}
           isInParty={true}
         />
       ) : (

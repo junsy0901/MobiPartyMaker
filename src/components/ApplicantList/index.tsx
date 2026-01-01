@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Character } from "../../types";
 import { CharacterCard } from "../CharacterCard";
 
@@ -8,6 +9,7 @@ interface ApplicantListProps {
   isAccountFullyAssigned: (accountName: string) => boolean;
   isCharacterInAnyParty: (characterId: string) => boolean;
   onRemoveCharacter: (characterId: string) => void;
+  onRemoveFromAllParties: (characterId: string) => void;
 }
 
 export function ApplicantList({
@@ -17,9 +19,44 @@ export function ApplicantList({
   isAccountFullyAssigned,
   isCharacterInAnyParty,
   onRemoveCharacter,
+  onRemoveFromAllParties,
 }: ApplicantListProps) {
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    try {
+      const data = e.dataTransfer.getData("application/json");
+      const droppedCharacter = JSON.parse(data) as Character;
+      onRemoveFromAllParties(droppedCharacter.id);
+    } catch (error) {
+      console.error("드롭 처리 중 오류 발생:", error);
+    }
+  };
+
   return (
-    <div className="flex-[3] bg-[#1a1a2e] rounded-2xl p-4 border border-[#2d2d44] shadow-xl flex flex-col">
+    <div
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`flex-[3] bg-[#1a1a2e] rounded-2xl p-4 border-2 shadow-xl flex flex-col transition-all ${
+        isDragOver
+          ? "border-emerald-400 bg-emerald-500/5"
+          : "border-[#2d2d44]"
+      }`}
+    >
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <span className="text-xl">👥 신청자 목록</span>
