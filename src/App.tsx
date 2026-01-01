@@ -11,8 +11,11 @@ function App() {
     parties,
     availableCharacters,
     groupedCharacters,
+    isTimeMode,
+    accountTimeSlots,
     handleAddCharacter,
     handleRemoveCharacter,
+    handleClearAllCharacters,
     isCharacterInAnyParty,
     isAccountFullyAssigned,
     handleCreateParty,
@@ -23,6 +26,9 @@ function App() {
     handleRemoveFromParty,
     handleRemoveCharacterFromAllParties,
     handleAutoAssign,
+    handleToggleTimeMode,
+    handleUpdateAccountTimeSlots,
+    isAccountAvailableAt,
   } = usePartyMaker();
 
   return (
@@ -42,9 +48,33 @@ function App() {
           <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 mb-2">
             ⚔️ 파티 메이커
           </h1>
-          <p className="text-gray-400">
+          <p className="text-gray-400 mb-4">
             캐릭터를 등록하고 드래그하여 파티를 구성하세요
           </p>
+          
+          {/* 시간 모드 토글 */}
+          <div className="inline-flex items-center gap-3 px-4 py-2 bg-[#1a1a2e] rounded-xl border border-[#2d2d44]">
+            <span className="text-sm text-gray-400">시간 모드</span>
+            <button
+              onClick={() => handleToggleTimeMode(!isTimeMode)}
+              className={`relative w-14 h-7 rounded-full transition-colors ${
+                isTimeMode
+                  ? "bg-gradient-to-r from-indigo-600 to-purple-600"
+                  : "bg-[#2d2d44]"
+              }`}
+            >
+              <span
+                className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-lg transition-transform ${
+                  isTimeMode ? "translate-x-7" : "translate-x-0"
+                }`}
+              />
+            </button>
+            {isTimeMode && (
+              <span className="text-sm text-indigo-400 font-medium">
+                🕐 8시~12시
+              </span>
+            )}
+          </div>
         </header>
 
         {/* 캐릭터 등록 */}
@@ -62,6 +92,10 @@ function App() {
             isCharacterInAnyParty={isCharacterInAnyParty}
             onRemoveCharacter={handleRemoveCharacter}
             onRemoveFromAllParties={handleRemoveCharacterFromAllParties}
+            onClearAll={handleClearAllCharacters}
+            isTimeMode={isTimeMode}
+            accountTimeSlots={accountTimeSlots}
+            onUpdateAccountTimeSlots={handleUpdateAccountTimeSlots}
           />
 
           <PartyListSection
@@ -75,6 +109,8 @@ function App() {
             onRemoveParty={handleRemoveParty}
             onUpdatePartyName={handleUpdatePartyName}
             onUpdateConditions={handleUpdatePartyConditions}
+            isTimeMode={isTimeMode}
+            isAccountAvailableAt={isAccountAvailableAt}
           />
         </div>
 

@@ -11,6 +11,7 @@ interface PartyHeaderProps {
   onUpdatePartyName: (partyId: string, name: string) => void;
   onRemoveParty: (partyId: string) => void;
   onUpdateConditions: (partyId: string, conditions: PartyCondition[]) => void;
+  isTimeMode?: boolean;
 }
 
 export function PartyHeader({
@@ -18,6 +19,7 @@ export function PartyHeader({
   onUpdatePartyName,
   onRemoveParty,
   onUpdateConditions,
+  isTimeMode,
 }: PartyHeaderProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isConditionFormOpen, setIsConditionFormOpen] = useState(false);
@@ -45,13 +47,19 @@ export function PartyHeader({
       {/* 상단: 파티 이름 + 요약 정보 + 토글 버튼 + 삭제 버튼 */}
       <div className="flex items-center justify-between gap-3">
         {/* 파티 이름 (왼쪽) */}
-        <input
-          type="text"
-          value={party.name}
-          onChange={(e) => onUpdatePartyName(party.id, e.target.value)}
-          className="bg-transparent text-lg font-bold text-white border-none outline-none focus:ring-0 min-w-0 flex-shrink"
-          placeholder="파티 이름"
-        />
+        {isTimeMode ? (
+          <span className="text-lg font-bold text-white flex items-center gap-2">
+            {party.name}
+          </span>
+        ) : (
+          <input
+            type="text"
+            value={party.name}
+            onChange={(e) => onUpdatePartyName(party.id, e.target.value)}
+            className="bg-transparent text-lg font-bold text-white border-none outline-none focus:ring-0 min-w-0 flex-shrink"
+            placeholder="파티 이름"
+          />
+        )}
 
         {/* 요약 정보 + 버튼들 (오른쪽) */}
         <div className="flex items-center gap-3 flex-shrink-0">

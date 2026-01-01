@@ -1,4 +1,4 @@
-import type { Party, Character, PartyCondition } from "../../types";
+import type { Party, Character, PartyCondition, TimeSlot } from "../../types";
 import { PartySlot } from "../PartySlot";
 import { PartyHeader } from "./PartyHeader";
 
@@ -13,6 +13,8 @@ interface PartyPanelProps {
   onRemoveParty: (partyId: string) => void;
   onUpdatePartyName: (partyId: string, name: string) => void;
   onUpdateConditions: (partyId: string, conditions: PartyCondition[]) => void;
+  isTimeMode?: boolean;
+  isAccountAvailableAt?: (accountName: string, timeSlot: TimeSlot) => boolean;
 }
 
 export function PartyPanel({
@@ -22,6 +24,8 @@ export function PartyPanel({
   onRemoveParty,
   onUpdatePartyName,
   onUpdateConditions,
+  isTimeMode,
+  isAccountAvailableAt,
 }: PartyPanelProps) {
   return (
     <div className="bg-gradient-to-br from-[#1a1a2e] to-[#12121f] rounded-2xl border border-[#2d2d44] overflow-hidden shadow-xl">
@@ -31,6 +35,7 @@ export function PartyPanel({
         onUpdatePartyName={onUpdatePartyName}
         onRemoveParty={onRemoveParty}
         onUpdateConditions={onUpdateConditions}
+        isTimeMode={isTimeMode}
       />
 
       {/* 파티 슬롯들 - 수평 배치 (8명: 4x2) */}
@@ -42,6 +47,9 @@ export function PartyPanel({
             character={character}
             onDrop={(char) => onDropCharacter(party.id, index, char)}
             onRemove={() => onRemoveCharacter(party.id, index)}
+            isTimeMode={isTimeMode}
+            timeSlot={party.timeSlot}
+            isAccountAvailableAt={isAccountAvailableAt}
           />
         ))}
       </div>

@@ -27,7 +27,7 @@ export const findClassByPartialName = (input: string): ClassName | null => {
   return null;
 };
 
-// 한 줄 파싱 함수 (슬래시 또는 띄어쓰기로 구분)
+// 한 줄 파싱 함수 (슬래시 또는 띄어쓰기로 구분, 순서 자동 감지)
 export const parseLine = (
   line: string
 ): { charName: string; className: ClassName; power: number } | null => {
@@ -40,27 +40,45 @@ export const parseLine = (
   if (trimmedLine.includes("/")) {
     parts = trimmedLine.split("/").map((part) => part.trim());
   } else {
-    // 띄어쓰기로 분리 (마지막: 전투력, 그 앞: 클래스, 나머지: 캐릭터명)
-    const spaceParts = trimmedLine.split(/\s+/);
-    if (spaceParts.length < 3) return null;
-
-    const powerInput = spaceParts[spaceParts.length - 1];
-    const classInput = spaceParts[spaceParts.length - 2];
-    const charName = spaceParts.slice(0, -2).join(" ");
-
-    parts = [charName, classInput, powerInput];
+    // 띄어쓰기로 분리
+    parts = trimmedLine.split(/\s+/);
   }
 
   if (parts.length < 3) return null;
 
-  const [charName, classInput, powerInput] = parts;
-  if (!charName) return null;
+  // 순서에 관계없이 각 요소를 자동 감지
+  let charName: string | null = null;
+  let matchedClass: ClassName | null = null;
+  let powerNum: number | null = null;
+  const usedIndices = new Set<number>();
 
-  const matchedClass = findClassByPartialName(classInput);
-  if (!matchedClass) return null;
+  // 1. 숫자(전투력) 찾기
+  for (let i = 0; i < parts.length; i++) {
+    const num = parseFloat(parts[i]);
+    if (!isNaN(num) && parts[i].match(/^[\d.]+$/)) {
+      powerNum = num;
+      usedIndices.add(i);
+      break;
+    }
+  }
 
-  const powerNum = parseFloat(powerInput);
-  if (isNaN(powerNum)) return null;
+  // 2. 클래스명 찾기
+  for (let i = 0; i < parts.length; i++) {
+    if (usedIndices.has(i)) continue;
+    const cls = findClassByPartialName(parts[i]);
+    if (cls) {
+      matchedClass = cls;
+      usedIndices.add(i);
+      break;
+    }
+  }
+
+  // 3. 나머지는 캐릭터명
+  const namePartsArr = parts.filter((_, i) => !usedIndices.has(i));
+  charName = namePartsArr.join(" ").trim();
+
+  // 모든 필수 요소가 있는지 확인
+  if (!charName || !matchedClass || powerNum === null) return null;
 
   return {
     charName,

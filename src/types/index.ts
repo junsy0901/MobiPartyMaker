@@ -20,12 +20,22 @@ export type ClassName =
   | '화염술사'
   | '힐러';
 
+// 시간 슬롯 타입 (8시~12시)
+export type TimeSlot = 8 | 9 | 10 | 11 | 12;
+
+export const TIME_SLOTS: TimeSlot[] = [8, 9, 10, 11, 12];
+
 export interface Character {
   id: string;
   accountName: string;
   characterName: string;
   power: number;
   className: ClassName;
+}
+
+// 계정별 가능 시간
+export interface AccountTimeSlots {
+  [accountName: string]: TimeSlot[];
 }
 
 export interface PartyCondition {
@@ -38,4 +48,5 @@ export interface Party {
   name: string;
   slots: (Character | null)[];
   conditions: PartyCondition[];
+  timeSlot?: TimeSlot; // 시간 모드에서 사용
 }
