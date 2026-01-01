@@ -27,7 +27,7 @@ export function PartyListSection({
   const isAutoAssignDisabled = parties.length === 0 || availableCharactersCount === 0;
 
   return (
-    <div className="flex-[2] flex flex-col">
+    <div className="flex-[5] flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <span className="text-xl">🎮</span>

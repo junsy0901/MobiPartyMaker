@@ -19,7 +19,7 @@ export function ApplicantList({
   onRemoveCharacter,
 }: ApplicantListProps) {
   return (
-    <div className="flex-[1] bg-[#1a1a2e] rounded-2xl p-4 border border-[#2d2d44] shadow-xl flex flex-col">
+    <div className="flex-[3] bg-[#1a1a2e] rounded-2xl p-4 border border-[#2d2d44] shadow-xl flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-bold text-white flex items-center gap-2">
           <span className="text-xl">👥 신청자 목록</span>
