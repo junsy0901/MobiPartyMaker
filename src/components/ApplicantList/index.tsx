@@ -51,7 +51,7 @@ export function ApplicantList({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`flex-[3] h-fit self-start bg-[#1a1a2e] rounded-2xl p-4 border-2 shadow-xl flex flex-col transition-all ${
+      className={`flex-[3] h-fit self-start sticky top-6 bg-[#1a1a2e] rounded-2xl p-4 border-2 shadow-xl flex flex-col transition-all ${
         isDragOver
           ? "border-emerald-400 bg-emerald-500/5"
           : "border-[#2d2d44]"
