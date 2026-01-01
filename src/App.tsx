@@ -15,6 +15,7 @@ function App() {
     accountTimeSlots,
     handleAddCharacter,
     handleRemoveCharacter,
+    handleClearAllCharacters,
     isCharacterInAnyParty,
     isAccountFullyAssigned,
     handleCreateParty,
@@ -91,6 +92,7 @@ function App() {
             isCharacterInAnyParty={isCharacterInAnyParty}
             onRemoveCharacter={handleRemoveCharacter}
             onRemoveFromAllParties={handleRemoveCharacterFromAllParties}
+            onClearAll={handleClearAllCharacters}
             isTimeMode={isTimeMode}
             accountTimeSlots={accountTimeSlots}
             onUpdateAccountTimeSlots={handleUpdateAccountTimeSlots}

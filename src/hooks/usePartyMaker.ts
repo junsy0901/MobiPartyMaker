@@ -110,6 +110,20 @@ export function usePartyMaker() {
     setCharacters((prev) => prev.filter((c) => c.id !== characterId));
   }, []);
 
+  // 모든 캐릭터 초기화
+  const handleClearAllCharacters = useCallback(() => {
+    setCharacters([]);
+    setAccountTimeSlots({});
+    // 파티 슬롯도 모두 비우기
+    setParties((prev) =>
+      prev.map((p) => ({
+        ...p,
+        slots: Array(p.slots.length).fill(null),
+      }))
+    );
+    showToast("모든 신청자가 초기화되었습니다.", "success");
+  }, [showToast]);
+
   // 파티 생성 (시간 모드일 때는 시간대 지정 필요)
   const handleCreateParty = useCallback((timeSlot?: TimeSlot) => {
     setParties((prev) => {
@@ -484,6 +498,7 @@ export function usePartyMaker() {
     // Character actions
     handleAddCharacter,
     handleRemoveCharacter,
+    handleClearAllCharacters,
     isCharacterInAnyParty,
     isAccountFullyAssigned,
 
