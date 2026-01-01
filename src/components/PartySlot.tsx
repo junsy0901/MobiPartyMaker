@@ -17,9 +17,9 @@ export function PartySlot({
   character, 
   onDrop, 
   onRemove,
-  isTimeMode,
-  timeSlot,
-  isAccountAvailableAt,
+  isTimeMode: _isTimeMode,
+  timeSlot: _timeSlot,
+  isAccountAvailableAt: _isAccountAvailableAt,
 }: PartySlotProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
