@@ -23,7 +23,7 @@ interface PartyListSectionProps {
 
 export function PartyListSection({
   parties,
-  availableCharactersCount,
+  availableCharactersCount: _availableCharactersCount,
   totalCharactersCount,
   onCreateParty,
   onAutoAssign,
