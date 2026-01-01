@@ -4,6 +4,7 @@ import { PARTY_SIZE } from "../../constants/classes";
 import { calculateAveragePower, formatPower } from "./utils";
 import { ConditionList } from "./ConditionList";
 import { ConditionForm } from "./ConditionForm";
+import { ConfirmModal } from "../ConfirmModal";
 
 interface PartyHeaderProps {
   party: Party;
@@ -20,6 +21,7 @@ export function PartyHeader({
 }: PartyHeaderProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isConditionFormOpen, setIsConditionFormOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const filledSlots = party.slots.filter((s) => s !== null).length;
   const averagePower = calculateAveragePower(party);
@@ -99,7 +101,7 @@ export function PartyHeader({
 
           {/* 파티 삭제 버튼 */}
           <button
-            onClick={() => onRemoveParty(party.id)}
+            onClick={() => setIsDeleteModalOpen(true)}
             className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
             title="파티 삭제"
           >
@@ -119,6 +121,20 @@ export function PartyHeader({
           </button>
         </div>
       </div>
+
+      {/* 파티 삭제 확인 모달 */}
+      <ConfirmModal
+        isOpen={isDeleteModalOpen}
+        title="파티 삭제"
+        message={`"${party.name}" 파티를 삭제하시겠습니까?\n배치된 캐릭터는 신청자 목록으로 돌아갑니다.`}
+        confirmText="삭제"
+        cancelText="취소"
+        onConfirm={() => {
+          setIsDeleteModalOpen(false);
+          onRemoveParty(party.id);
+        }}
+        onCancel={() => setIsDeleteModalOpen(false)}
+      />
 
       {/* 상세 정보 (토글) */}
       {isDetailOpen && (
