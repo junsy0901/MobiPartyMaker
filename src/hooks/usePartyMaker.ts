@@ -98,36 +98,114 @@ export function usePartyMaker() {
     []
   );
 
-  // 캐릭터를 파티에 드롭
+  // 캐릭터를 파티에 드롭 (스왑 지원)
   const handleDropCharacter = useCallback(
     (partyId: string, slotIndex: number, character: Character) => {
-      const party = parties.find((p) => p.id === partyId);
-      if (!party) return;
+      const targetParty = parties.find((p) => p.id === partyId);
+      if (!targetParty) return;
 
-      // 같은 계정의 다른 캐릭터가 이미 파티에 있는지 확인
-      const existingAccountCharacter = party.slots.find(
-        (slot) =>
-          slot !== null &&
-          slot.accountName === character.accountName &&
-          slot.id !== character.id
-      );
+      // 드래그한 캐릭터의 원래 위치 찾기
+      let sourcePartyId: string | null = null;
+      let sourceSlotIndex: number | null = null;
+      for (const p of parties) {
+        const idx = p.slots.findIndex((s) => s?.id === character.id);
+        if (idx !== -1) {
+          sourcePartyId = p.id;
+          sourceSlotIndex = idx;
+          break;
+        }
+      }
 
-      if (existingAccountCharacter) {
-        showToast(
-          `이미 같은 계정(${character.accountName})의 캐릭터가 이 파티에 있습니다!`,
-          "error"
-        );
+      // 대상 슬롯에 있는 캐릭터
+      const targetSlotCharacter = targetParty.slots[slotIndex];
+
+      // 같은 위치에 드롭한 경우 무시
+      if (sourcePartyId === partyId && sourceSlotIndex === slotIndex) {
         return;
+      }
+
+      // 스왑 시 같은 계정 체크
+      if (targetSlotCharacter) {
+        // 동일 파티 내 스왑인 경우: 계정 체크 불필요 (이미 같은 파티에 있으므로)
+        const isSamePartySwap = sourcePartyId === partyId;
+
+        if (!isSamePartySwap) {
+          // 드래그한 캐릭터가 대상 파티로 이동할 때 같은 계정 체크
+          // (대상 슬롯의 캐릭터와 드래그한 캐릭터 자신은 제외)
+          const sameAccountInTargetParty = targetParty.slots.find(
+            (slot) =>
+              slot !== null &&
+              slot.id !== targetSlotCharacter.id &&
+              slot.id !== character.id &&
+              slot.accountName === character.accountName
+          );
+
+          if (sameAccountInTargetParty) {
+            showToast(
+              `이미 같은 계정(${character.accountName})의 캐릭터가 이 파티에 있습니다!`,
+              "error"
+            );
+            return;
+          }
+
+          // 대상 슬롯의 캐릭터가 소스 파티로 이동할 때 같은 계정 체크
+          if (sourcePartyId) {
+            const sourceParty = parties.find((p) => p.id === sourcePartyId);
+            if (sourceParty) {
+              const sameAccountInSourceParty = sourceParty.slots.find(
+                (slot) =>
+                  slot !== null &&
+                  slot.id !== character.id &&
+                  slot.id !== targetSlotCharacter.id &&
+                  slot.accountName === targetSlotCharacter.accountName
+              );
+
+              if (sameAccountInSourceParty) {
+                showToast(
+                  `같은 계정(${targetSlotCharacter.accountName})의 캐릭터가 원래 파티에 있어 스왑할 수 없습니다!`,
+                  "error"
+                );
+                return;
+              }
+            }
+          }
+        }
+      } else {
+        // 대상 슬롯이 비어있는 경우 기존 로직 (같은 계정 체크)
+        const existingAccountCharacter = targetParty.slots.find(
+          (slot) =>
+            slot !== null &&
+            slot.accountName === character.accountName &&
+            slot.id !== character.id
+        );
+
+        if (existingAccountCharacter) {
+          showToast(
+            `이미 같은 계정(${character.accountName})의 캐릭터가 이 파티에 있습니다!`,
+            "error"
+          );
+          return;
+        }
       }
 
       setParties((prev) =>
         prev.map((p) => {
-          // 모든 파티에서 해당 캐릭터 제거 (다른 파티 간 이동 지원)
-          const newSlots = p.slots.map((slot) =>
-            slot?.id === character.id ? null : slot
-          );
+          const newSlots = [...p.slots];
 
-          // 대상 파티인 경우 지정된 슬롯에 캐릭터 배치
+          // 소스 파티에서 드래그한 캐릭터 제거 및 스왑 처리
+          if (p.id === sourcePartyId && sourceSlotIndex !== null) {
+            // 스왑: 대상 슬롯의 캐릭터를 소스 위치로 이동
+            newSlots[sourceSlotIndex] = targetSlotCharacter || null;
+          } else {
+            // 다른 파티에서 드래그한 캐릭터 제거 (신청자 목록에서 온 경우 해당 없음)
+            for (let i = 0; i < newSlots.length; i++) {
+              if (newSlots[i]?.id === character.id) {
+                newSlots[i] = null;
+              }
+            }
+          }
+
+          // 대상 파티에 드래그한 캐릭터 배치
           if (p.id === partyId) {
             newSlots[slotIndex] = character;
           }
