@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { Character, Party, PartyCondition, TimeSlot } from "../../types";
 import { TIME_SLOTS } from "../../types";
 import { PartyPanel } from "../PartyPanel";
 import { ConfirmModal } from "../ConfirmModal";
 import { PartyListHeader } from "./PartyListHeader";
 import { exportToCSV } from "./exportCSV";
+import { exportToImage } from "./exportImage";
 
 interface PartyListSectionProps {
   parties: Party[];
@@ -19,6 +20,7 @@ interface PartyListSectionProps {
   onUpdateConditions: (partyId: string, conditions: PartyCondition[]) => void;
   isTimeMode: boolean;
   isAccountAvailableAt: (accountName: string, timeSlot: TimeSlot) => boolean;
+  showToast?: (message: string, type?: "error" | "success") => void;
 }
 
 export function PartyListSection({
@@ -34,8 +36,10 @@ export function PartyListSection({
   onUpdateConditions,
   isTimeMode,
   isAccountAvailableAt,
+  showToast,
 }: PartyListSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const partyListRef = useRef<HTMLDivElement>(null);
 
   const isAutoAssignDisabled = parties.length === 0 || totalCharactersCount === 0;
   const isExportDisabled = parties.length === 0 || parties.every((p) => p.slots.every((s) => s === null));
@@ -53,6 +57,22 @@ export function PartyListSection({
     exportToCSV(parties);
   };
 
+  const handleExportImage = async () => {
+    if (!partyListRef.current) {
+      showToast?.("파티 목록을 찾을 수 없습니다.", "error");
+      return;
+    }
+
+    try {
+      await exportToImage(partyListRef.current);
+      showToast?.("이미지가 클립보드에 복사되었습니다.", "success");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "이미지 내보내기에 실패했습니다.";
+      showToast?.(errorMessage, "error");
+      console.error("이미지 내보내기 상세 에러:", error);
+    }
+  };
+
   // 시간 모드에서 시간대별로 파티 그룹화
   const groupedPartiesByTime = isTimeMode
     ? TIME_SLOTS.reduce((acc, hour) => {
@@ -67,15 +87,17 @@ export function PartyListSection({
         isExportDisabled={isExportDisabled}
         isAutoAssignDisabled={isAutoAssignDisabled}
         onExportCSV={handleExportCSV}
+        onExportImage={handleExportImage}
         onAutoAssignClick={handleAutoAssignClick}
         onCreateParty={() => onCreateParty()}
         isTimeMode={isTimeMode}
       />
 
-      {parties.length === 0 ? (
-        <EmptyPartyState onCreateParty={() => onCreateParty()} isTimeMode={isTimeMode} />
-      ) : isTimeMode && groupedPartiesByTime ? (
-        <div className="space-y-6 flex-1 overflow-y-auto pr-2 scrollbar-thin">
+      <div ref={partyListRef}>
+        {parties.length === 0 ? (
+          <EmptyPartyState onCreateParty={() => onCreateParty()} isTimeMode={isTimeMode} />
+        ) : isTimeMode && groupedPartiesByTime ? (
+          <div className="space-y-6 flex-1 overflow-y-auto pr-2 scrollbar-thin">
           {TIME_SLOTS.map((hour) => (
             <div key={hour} className="space-y-3">
               {/* 시간대 헤더 */}
@@ -116,24 +138,25 @@ export function PartyListSection({
               </div>
             </div>
           ))}
-        </div>
-      ) : (
-        <div className="space-y-4 flex-1 overflow-y-auto pr-2 scrollbar-thin">
-          {parties.map((party) => (
-            <PartyPanel
-              key={party.id}
-              party={party}
-              onDropCharacter={onDropCharacter}
-              onRemoveCharacter={onRemoveCharacter}
-              onRemoveParty={onRemoveParty}
-              onUpdatePartyName={onUpdatePartyName}
-              onUpdateConditions={onUpdateConditions}
-              isTimeMode={isTimeMode}
-              isAccountAvailableAt={isAccountAvailableAt}
-            />
-          ))}
-        </div>
-      )}
+          </div>
+        ) : (
+          <div className="space-y-4 flex-1 overflow-y-auto pr-2 scrollbar-thin">
+            {parties.map((party) => (
+              <PartyPanel
+                key={party.id}
+                party={party}
+                onDropCharacter={onDropCharacter}
+                onRemoveCharacter={onRemoveCharacter}
+                onRemoveParty={onRemoveParty}
+                onUpdatePartyName={onUpdatePartyName}
+                onUpdateConditions={onUpdateConditions}
+                isTimeMode={isTimeMode}
+                isAccountAvailableAt={isAccountAvailableAt}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* 자동 배치 경고 모달 */}
       <ConfirmModal

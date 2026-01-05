@@ -31,6 +31,7 @@ function App() {
     handleToggleTimeMode,
     handleUpdateAccountTimeSlots,
     isAccountAvailableAt,
+    showToast,
   } = usePartyMaker();
 
   return (
@@ -84,6 +85,7 @@ function App() {
             onUpdateConditions={handleUpdatePartyConditions}
             isTimeMode={isTimeMode}
             isAccountAvailableAt={isAccountAvailableAt}
+            showToast={showToast}
           />
         </div>
 
