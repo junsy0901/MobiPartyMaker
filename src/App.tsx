@@ -2,6 +2,8 @@ import { CharacterForm } from "./components/CharacterForm";
 import { Toast } from "./components/Toast";
 import { ApplicantList } from "./components/ApplicantList";
 import { PartyListSection } from "./components/PartyListSection";
+import { Header } from "./components/Header";
+import { Footer } from "./components/Footer";
 import { usePartyMaker } from "./hooks";
 
 function App() {
@@ -43,50 +45,10 @@ function App() {
       {toast && <Toast message={toast.message} type={toast.type} />}
 
       <div className="relative max-w-[1800px] mx-auto p-6">
-        {/* 헤더 */}
-        <header className="text-center mb-6">
-          <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 mb-2">
-            ⚔️ 모비노기 파티 메이커
-          </h1>
-          <p className="text-gray-400 mb-4">
-            캐릭터를 등록하고 드래그하여 파티를 구성하세요
-          </p>
-          
-          {/* 시간 모드 토글 */}
-          <div className="inline-flex items-center gap-3 px-4 py-2 bg-[#1a1a2e] rounded-xl border border-[#2d2d44]">
-            <span className="text-sm text-gray-400">시간 모드</span>
-            <div className="relative group">
-              <button
-                onClick={() => handleToggleTimeMode(!isTimeMode)}
-                className={`relative w-14 h-7 rounded-full transition-colors ${
-                  isTimeMode
-                    ? "bg-gradient-to-r from-indigo-600 to-purple-600"
-                    : "bg-[#2d2d44]"
-                }`}
-              >
-                <span
-                  className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-lg transition-transform ${
-                    isTimeMode ? "translate-x-7" : "translate-x-0"
-                  }`}
-                />
-              </button>
-              {/* 툴팁 */}
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-[#1a1a2e] border border-[#2d2d44] rounded-lg shadow-xl text-xs text-gray-300 w-max max-w-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
-                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-[#1a1a2e] border-r border-b border-[#2d2d44] rotate-45"></div>
-                <div className="relative">
-                  각 길드원들의 가능한 시간대를 입력하여
-                  <br />
-                  자동으로 파티를 배치할 수 있습니다.
-                </div>
-              </div>
-            </div>
-            {isTimeMode && (
-              <span className="text-sm text-indigo-400 font-medium">
-                🕐 8시~12시
-              </span>
-            )}
-          </div>
-        </header>
+        <Header
+          isTimeMode={isTimeMode}
+          onToggleTimeMode={handleToggleTimeMode}
+        />
 
         {/* 캐릭터 등록 */}
         <div className="mb-6">
@@ -125,12 +87,7 @@ function App() {
           />
         </div>
 
-        {/* 푸터 */}
-        <footer className="mt-8 text-center text-gray-500 text-sm">
-          <p>
-            📢 문의사항: 칼릭스 베롤
-          </p>
-        </footer>
+        <Footer />
       </div>
 
       {/* 스크롤바 스타일 */}
