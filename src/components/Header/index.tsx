@@ -21,7 +21,9 @@ export function Header({
         ⚔️ 모비노기 파티 메이커
       </h1>
       <p className="text-gray-400 mb-4">
-        캐릭터를 등록하고 드래그하여 파티를 구성하세요
+        마비노기 모바일 파티 구성을 쉽게 도와주는 페이지입니다.
+        <br />
+        여러 계정의 다수의 캐릭터들을 충돌 없이 배치해야 할 때 유용합니다.
       </p>
       
       <TimeModeToggle
