@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import type { Character, Party, PartyCondition, TimeSlot, AccountTimeSlots } from "../types";
-import { TIME_SLOTS } from "../types";
+import { generateTimeSlots } from "../types";
 import { PARTY_SIZE } from "../constants/classes";
 
 interface Toast {
@@ -16,6 +16,9 @@ export function usePartyMaker() {
   // 시간 모드 상태
   const [isTimeMode, setIsTimeMode] = useState(false);
   const [accountTimeSlots, setAccountTimeSlots] = useState<AccountTimeSlots>({});
+  const [startHour, setStartHour] = useState<number>(8);
+  const [endHour, setEndHour] = useState<number>(12);
+  const selectedTimeSlots = generateTimeSlots(startHour, endHour);
 
   // 토스트 메시지 표시
   const showToast = useCallback(
@@ -31,8 +34,9 @@ export function usePartyMaker() {
     setIsTimeMode(enabled);
     
     if (enabled) {
-      // 시간 모드 활성화: 8시~12시 파티 자동 생성
-      const timeParties: Party[] = TIME_SLOTS.map((hour) => ({
+      // 시간 모드 활성화: 설정된 시간대로 파티 자동 생성
+      const timeSlots = generateTimeSlots(startHour, endHour);
+      const timeParties: Party[] = timeSlots.map((hour) => ({
         id: `time-party-${hour}-${Date.now()}`,
         name: `${hour}시`,
         slots: Array(PARTY_SIZE).fill(null),
@@ -44,7 +48,30 @@ export function usePartyMaker() {
       // 시간 모드 비활성화: 기존 파티 초기화
       setParties([]);
     }
-  }, []);
+  }, [startHour, endHour]);
+
+  // 시간 범위 업데이트 (자정을 넘기는 경우도 지원: 21시~2시)
+  const handleUpdateTimeRange = useCallback((newStartHour: number, newEndHour: number) => {
+    // 0~23 범위로 제한
+    const validStart = Math.max(0, Math.min(23, newStartHour));
+    const validEnd = Math.max(0, Math.min(23, newEndHour));
+    
+    setStartHour(validStart);
+    setEndHour(validEnd);
+    
+    // 시간 모드가 활성화되어 있으면 파티도 업데이트
+    if (isTimeMode) {
+      const timeSlots = generateTimeSlots(validStart, validEnd);
+      const timeParties: Party[] = timeSlots.map((hour) => ({
+        id: `time-party-${hour}-${Date.now()}`,
+        name: `${hour}시`,
+        slots: Array(PARTY_SIZE).fill(null),
+        conditions: [],
+        timeSlot: hour,
+      }));
+      setParties(timeParties);
+    }
+  }, [isTimeMode]);
 
   // 계정의 가능 시간 업데이트
   const handleUpdateAccountTimeSlots = useCallback(
@@ -494,6 +521,9 @@ export function usePartyMaker() {
     // 시간 모드 상태
     isTimeMode,
     accountTimeSlots,
+    selectedTimeSlots,
+    startHour,
+    endHour,
 
     // Character actions
     handleAddCharacter,
@@ -515,7 +545,11 @@ export function usePartyMaker() {
     // 시간 모드 actions
     handleToggleTimeMode,
     handleUpdateAccountTimeSlots,
+    handleUpdateTimeRange,
     isAccountAvailableAt,
+
+    // Toast
+    showToast,
   };
 }
 
