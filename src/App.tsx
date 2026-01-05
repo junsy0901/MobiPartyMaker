@@ -46,7 +46,7 @@ function App() {
         {/* 헤더 */}
         <header className="text-center mb-6">
           <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 mb-2">
-            ⚔️ 파티 메이커
+            ⚔️ 모비노기 파티 메이커
           </h1>
           <p className="text-gray-400 mb-4">
             캐릭터를 등록하고 드래그하여 파티를 구성하세요
@@ -117,7 +117,7 @@ function App() {
         {/* 푸터 */}
         <footer className="mt-8 text-center text-gray-500 text-sm">
           <p>
-            💡 팁: 같은 계정의 캐릭터는 하나의 파티에 한 명만 배치할 수 있습니다
+            📢 문의사항: 칼릭스 베롤
           </p>
         </footer>
       </div>
