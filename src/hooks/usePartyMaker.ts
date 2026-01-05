@@ -516,6 +516,9 @@ export function usePartyMaker() {
     handleToggleTimeMode,
     handleUpdateAccountTimeSlots,
     isAccountAvailableAt,
+
+    // Toast
+    showToast,
   };
 }
 
