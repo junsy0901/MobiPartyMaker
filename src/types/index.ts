@@ -20,10 +20,30 @@ export type ClassName =
   | '화염술사'
   | '힐러';
 
-// 시간 슬롯 타입 (8시~12시)
-export type TimeSlot = 8 | 9 | 10 | 11 | 12;
+// 시간 슬롯 타입 (0시~23시)
+export type TimeSlot = number;
 
-export const TIME_SLOTS: TimeSlot[] = [8, 9, 10, 11, 12];
+// 시간 범위 생성 헬퍼 함수 (자정을 넘기는 경우도 지원: 21시~2시 = 21,22,23,0,1,2)
+export function generateTimeSlots(startHour: number, endHour: number): TimeSlot[] {
+  const slots: TimeSlot[] = [];
+  
+  if (startHour <= endHour) {
+    // 일반적인 경우: 8시~12시
+    for (let i = startHour; i <= endHour; i++) {
+      slots.push(i);
+    }
+  } else {
+    // 자정을 넘기는 경우: 21시~2시 = 21,22,23,0,1,2
+    for (let i = startHour; i <= 23; i++) {
+      slots.push(i);
+    }
+    for (let i = 0; i <= endHour; i++) {
+      slots.push(i);
+    }
+  }
+  
+  return slots;
+}
 
 export interface Character {
   id: string;

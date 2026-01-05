@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
 import type { Character, Party, PartyCondition, TimeSlot } from "../../types";
-import { TIME_SLOTS } from "../../types";
 import { PartyPanel } from "../PartyPanel";
 import { ConfirmModal } from "../ConfirmModal";
 import { PartyListHeader } from "./PartyListHeader";
@@ -11,6 +10,7 @@ interface PartyListSectionProps {
   parties: Party[];
   availableCharactersCount: number;
   totalCharactersCount: number;
+  selectedTimeSlots: TimeSlot[];
   onCreateParty: (timeSlot?: TimeSlot) => void;
   onAutoAssign: () => void;
   onDropCharacter: (partyId: string, slotIndex: number, character: Character) => void;
@@ -27,6 +27,7 @@ export function PartyListSection({
   parties,
   availableCharactersCount: _availableCharactersCount,
   totalCharactersCount,
+  selectedTimeSlots,
   onCreateParty,
   onAutoAssign,
   onDropCharacter,
@@ -75,7 +76,7 @@ export function PartyListSection({
 
   // 시간 모드에서 시간대별로 파티 그룹화
   const groupedPartiesByTime = isTimeMode
-    ? TIME_SLOTS.reduce((acc, hour) => {
+    ? selectedTimeSlots.reduce((acc, hour) => {
         acc[hour] = parties.filter((p) => p.timeSlot === hour);
         return acc;
       }, {} as Record<TimeSlot, Party[]>)
@@ -98,7 +99,7 @@ export function PartyListSection({
           <EmptyPartyState onCreateParty={() => onCreateParty()} isTimeMode={isTimeMode} />
         ) : isTimeMode && groupedPartiesByTime ? (
           <div className="space-y-6 flex-1 overflow-y-auto pr-2 scrollbar-thin">
-          {TIME_SLOTS.map((hour) => (
+          {selectedTimeSlots.map((hour) => (
             <div key={hour} className="space-y-3">
               {/* 시간대 헤더 */}
               <div className="flex items-center justify-between">

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import type { Character, TimeSlot, AccountTimeSlots } from "../../types";
-import { TIME_SLOTS } from "../../types";
 import { CharacterCard } from "../CharacterCard";
 import { ConfirmModal } from "../ConfirmModal";
 
@@ -8,6 +7,7 @@ interface ApplicantListProps {
   characters: Character[];
   availableCharacters: Character[];
   groupedCharacters: Record<string, Character[]>;
+  selectedTimeSlots: TimeSlot[];
   isAccountFullyAssigned: (accountName: string) => boolean;
   isCharacterInAnyParty: (characterId: string) => boolean;
   onRemoveCharacter: (characterId: string) => void;
@@ -22,6 +22,7 @@ export function ApplicantList({
   characters,
   availableCharacters,
   groupedCharacters,
+  selectedTimeSlots,
   isAccountFullyAssigned,
   isCharacterInAnyParty,
   onRemoveCharacter,
@@ -163,7 +164,7 @@ export function ApplicantList({
                   <div className="mb-2 pb-2 border-b border-[#2d2d44]">
                     <div className="flex items-center gap-1 flex-wrap">
                       <span className="text-xs text-gray-400 mr-1">🕐</span>
-                      {TIME_SLOTS.map((hour) => {
+                      {selectedTimeSlots.map((hour) => {
                         const isSelected = currentTimeSlots.length === 0 || currentTimeSlots.includes(hour);
                         return (
                           <button

@@ -30,6 +30,10 @@ function App() {
     handleAutoAssign,
     handleToggleTimeMode,
     handleUpdateAccountTimeSlots,
+    handleUpdateTimeRange,
+    startHour,
+    endHour,
+    selectedTimeSlots,
     isAccountAvailableAt,
     showToast,
   } = usePartyMaker();
@@ -48,7 +52,10 @@ function App() {
       <div className="relative max-w-[1800px] mx-auto p-6">
         <Header
           isTimeMode={isTimeMode}
+          startHour={startHour}
+          endHour={endHour}
           onToggleTimeMode={handleToggleTimeMode}
+          onUpdateTimeRange={handleUpdateTimeRange}
         />
 
         {/* 캐릭터 등록 */}
@@ -62,6 +69,7 @@ function App() {
             characters={characters}
             availableCharacters={availableCharacters}
             groupedCharacters={groupedCharacters}
+            selectedTimeSlots={selectedTimeSlots}
             isAccountFullyAssigned={isAccountFullyAssigned}
             isCharacterInAnyParty={isCharacterInAnyParty}
             onRemoveCharacter={handleRemoveCharacter}
@@ -76,6 +84,7 @@ function App() {
             parties={parties}
             availableCharactersCount={availableCharacters.length}
             totalCharactersCount={characters.length}
+            selectedTimeSlots={selectedTimeSlots}
             onCreateParty={handleCreateParty}
             onAutoAssign={handleAutoAssign}
             onDropCharacter={handleDropCharacter}
