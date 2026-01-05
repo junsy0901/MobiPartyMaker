@@ -5,6 +5,7 @@ import { PartyListSection } from "./components/PartyListSection";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { usePartyMaker } from "./hooks";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   const {
@@ -118,6 +119,9 @@ function App() {
           background-color: #3d3d54;
         }
       `}</style>
+
+      {/* Vercel Analytics */}
+      <Analytics />
     </div>
   );
 }
