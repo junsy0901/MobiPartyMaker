@@ -113,7 +113,7 @@ export function CharacterForm({ onAddCharacter }: CharacterFormProps) {
     >
       <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
         <span className="text-2xl">✨</span>
-        캐릭터 등록
+        신청자 등록
       </h2>
 
       {/* 수평 레이아웃: 계정명 + 빠른 입력 */}
